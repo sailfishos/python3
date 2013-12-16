@@ -29,7 +29,7 @@ Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python-2.0
 Group:          Development/Languages/Python
-Version:        3.3.2
+Version:        3.3.3
 Release:        0
 Source:         %{name}-%{version}.tar.gz
 
