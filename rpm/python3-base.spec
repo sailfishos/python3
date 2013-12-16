@@ -277,6 +277,7 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _sha1}
 %{dynlib _sha256}
 %{dynlib _sha512}
+%{dynlib xxlimited}
 # python parts
 %dir /usr/lib/python%{python_version}
 %dir /usr/lib/python%{python_version}/site-packages
