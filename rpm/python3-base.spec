@@ -24,6 +24,9 @@ BuildRequires:  pkgconfig
 BuildRequires:  xz
 BuildRequires:  zlib-devel
 BuildRequires:  sqlite-devel
+BuildRequires:  openssl-devel
+BuildRequires:  bzip2-devel
+BuildRequires:  readline-devel
 BuildRequires:  python
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
@@ -278,6 +281,12 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib unicodedata}
 %{dynlib zlib}
 %{dynlib _sqlite3}
+%{dynlib _bz2}
+%{dynlib _curses}
+%{dynlib _curses_panel}
+%{dynlib _hashlib}
+%{dynlib _ssl}
+%{dynlib readline}
 %{dynlib pyexpat}
 # hashlib fallback modules
 %{dynlib _md5}
