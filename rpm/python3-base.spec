@@ -33,7 +33,7 @@ Summary:        Python3 Interpreter
 License:        Python-2.0
 Group:          Development/Languages/Python
 Version:        3.3.3
-Release:        0
+Release:        4
 Source:         %{name}-%{version}.tar.gz
 Patch0:         skip-sem-test.patch
 
