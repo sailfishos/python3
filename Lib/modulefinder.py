@@ -1,13 +1,16 @@
 """Find modules used by a script, using introspection."""
 
 import dis
-import imp
 import importlib.machinery
 import marshal
 import os
 import sys
 import types
 import struct
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', PendingDeprecationWarning)
+    import imp
 
 # XXX Clean up once str8's cstor matches bytes.
 LOAD_CONST = bytes([dis.opname.index('LOAD_CONST')])
@@ -229,7 +232,7 @@ class ModuleFinder:
         for dir in m.__path__:
             try:
                 names = os.listdir(dir)
-            except os.error:
+            except OSError:
                 self.msg(2, "can't list directory", dir)
                 continue
             for name in names:
@@ -287,7 +290,7 @@ class ModuleFinder:
             if fp.read(4) != imp.get_magic():
                 self.msgout(2, "raise ImportError: Bad magic number", pathname)
                 raise ImportError("Bad magic number in %s" % pathname)
-            fp.read(8)  # Skip mtime and size.
+            fp.read(4)
             co = marshal.load(fp)
         else:
             co = None

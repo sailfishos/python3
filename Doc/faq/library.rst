@@ -211,7 +211,7 @@ using curses, but curses is a fairly large module to learn.
            try:
                c = sys.stdin.read(1)
                print("Got character", repr(c))
-           except IOError:
+           except OSError:
                pass
    finally:
        termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
@@ -224,7 +224,11 @@ using curses, but curses is a fairly large module to learn.
    :func:`termios.tcsetattr` turns off stdin's echoing and disables canonical
    mode.  :func:`fcntl.fnctl` is used to obtain stdin's file descriptor flags
    and modify them for non-blocking mode.  Since reading stdin when it is empty
-   results in an :exc:`IOError`, this error is caught and ignored.
+   results in an :exc:`OSError`, this error is caught and ignored.
+
+   .. versionchanged:: 3.3
+      *sys.stdin.read* used to raise :exc:`IOError`. Starting from Python 3.3
+      :exc:`IOError` is alias for :exc:`OSError`.
 
 
 Threads
@@ -509,6 +513,7 @@ For data that is more regular (e.g. a homogeneous list of ints or floats),
 you can also use the :mod:`array` module.
 
 .. note::
+
    To read and write binary data, it is mandatory to open the file in
    binary mode (here, passing ``"rb"`` to :func:`open`).  If you use
    ``"r"`` instead (the default), the file will be open in text mode

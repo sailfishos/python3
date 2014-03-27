@@ -45,6 +45,7 @@ in any early abort case).
 Unless otherwise stated, buffers are not NUL-terminated.
 
 .. note::
+
    For all ``#`` variants of formats (``s#``, ``y#``, etc.), the type of
    the length argument (int or :c:type:`Py_ssize_t`) is controlled by
    defining the macro :c:macro:`PY_SSIZE_T_CLEAN` before including
@@ -293,6 +294,8 @@ Other objects
    second is the address of the C variable (of type :c:type:`PyObject\*`) into which
    the object pointer is stored.  If the Python object does not have the required
    type, :exc:`TypeError` is raised.
+
+.. _o_ampersand:
 
 ``O&`` (object) [*converter*, *anything*]
    Convert a Python object to a C variable through a *converter* function.  This

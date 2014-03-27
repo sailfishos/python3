@@ -22,15 +22,13 @@ def tester(fn, wantResult):
     fn = fn.replace('["', '[b"')
     fn = fn.replace(", '", ", b'")
     fn = fn.replace(', "', ', b"')
-    fn = os.fsencode(fn).decode('latin1')
-    fn = fn.encode('ascii', 'backslashreplace').decode('ascii')
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         gotResult = eval(fn)
     if isinstance(wantResult, str):
-        wantResult = os.fsencode(wantResult)
+        wantResult = wantResult.encode('ascii')
     elif isinstance(wantResult, tuple):
-        wantResult = tuple(os.fsencode(r) for r in wantResult)
+        wantResult = tuple(r.encode('ascii') for r in wantResult)
 
     gotResult = eval(fn)
     if wantResult != gotResult:
@@ -225,6 +223,7 @@ class TestNtpath(unittest.TestCase):
             tester('ntpath.expandvars("$[foo]bar")', "$[foo]bar")
             tester('ntpath.expandvars("$bar bar")', "$bar bar")
             tester('ntpath.expandvars("$?bar")', "$?bar")
+            tester('ntpath.expandvars("${foo}bar")', "barbar")
             tester('ntpath.expandvars("$foo}bar")', "bar}bar")
             tester('ntpath.expandvars("${foo")', "${foo")
             tester('ntpath.expandvars("${{foo}}")', "baz1}")
@@ -237,26 +236,6 @@ class TestNtpath(unittest.TestCase):
             tester('ntpath.expandvars("%?bar%")', "%?bar%")
             tester('ntpath.expandvars("%foo%%bar")', "bar%bar")
             tester('ntpath.expandvars("\'%foo%\'%bar")', "\'%foo%\'%bar")
-
-    @unittest.skipUnless(support.FS_NONASCII, 'need support.FS_NONASCII')
-    def test_expandvars_nonascii(self):
-        def check(value, expected):
-            tester('ntpath.expandvars(%r)' % value, expected)
-        with support.EnvironmentVarGuard() as env:
-            env.clear()
-            nonascii = support.FS_NONASCII
-            env['spam'] = nonascii
-            env[nonascii] = 'ham' + nonascii
-            check('$spam bar', '%s bar' % nonascii)
-            check('$%s bar' % nonascii, '$%s bar' % nonascii)
-            check('${spam}bar', '%sbar' % nonascii)
-            check('${%s}bar' % nonascii, 'ham%sbar' % nonascii)
-            check('$spam}bar', '%s}bar' % nonascii)
-            check('$%s}bar' % nonascii, '$%s}bar' % nonascii)
-            check('%spam% bar', '%s bar' % nonascii)
-            check('%{}% bar'.format(nonascii), 'ham%s bar' % nonascii)
-            check('%spam%bar', '%sbar' % nonascii)
-            check('%{}%bar'.format(nonascii), 'ham%sbar' % nonascii)
 
     def test_abspath(self):
         # ntpath.abspath() can only be used on a system with the "nt" module
@@ -306,6 +285,40 @@ class TestNtpath(unittest.TestCase):
                     # dialogs (#4804)
                     ntpath.sameopenfile(-1, -1)
 
+    def test_ismount(self):
+        self.assertTrue(ntpath.ismount("c:\\"))
+        self.assertTrue(ntpath.ismount("C:\\"))
+        self.assertTrue(ntpath.ismount("c:/"))
+        self.assertTrue(ntpath.ismount("C:/"))
+        self.assertTrue(ntpath.ismount("\\\\.\\c:\\"))
+        self.assertTrue(ntpath.ismount("\\\\.\\C:\\"))
+
+        self.assertTrue(ntpath.ismount(b"c:\\"))
+        self.assertTrue(ntpath.ismount(b"C:\\"))
+        self.assertTrue(ntpath.ismount(b"c:/"))
+        self.assertTrue(ntpath.ismount(b"C:/"))
+        self.assertTrue(ntpath.ismount(b"\\\\.\\c:\\"))
+        self.assertTrue(ntpath.ismount(b"\\\\.\\C:\\"))
+
+        with support.temp_dir() as d:
+            self.assertFalse(ntpath.ismount(d))
+
+        if sys.platform == "win32":
+            #
+            # Make sure the current folder isn't the root folder
+            # (or any other volume root). The drive-relative
+            # locations below cannot then refer to mount points
+            #
+            drive, path = ntpath.splitdrive(sys.executable)
+            with support.change_cwd(os.path.dirname(sys.executable)):
+                self.assertFalse(ntpath.ismount(drive.lower()))
+                self.assertFalse(ntpath.ismount(drive.upper()))
+
+            self.assertTrue(ntpath.ismount("\\\\localhost\\c$"))
+            self.assertTrue(ntpath.ismount("\\\\localhost\\c$\\"))
+
+            self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$"))
+            self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
 
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = ntpath

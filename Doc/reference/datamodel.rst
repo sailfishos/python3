@@ -934,6 +934,20 @@ Internal types
       frame).  A debugger can implement a Jump command (aka Set Next Statement)
       by writing to f_lineno.
 
+      Frame objects support one method:
+
+      .. method:: frame.clear()
+
+         This method clears all references to local variables held by the
+         frame.  Also, if the frame belonged to a generator, the generator
+         is finalized.  This helps break reference cycles involving frame
+         objects (for example when catching an exception and storing its
+         traceback for later use).
+
+         :exc:`RuntimeError` is raised if the frame is currently executing.
+
+         .. versionadded:: 3.4
+
    Traceback objects
       .. index::
          object: traceback
@@ -1121,12 +1135,10 @@ Basic customization
       ``sys.last_traceback`` keeps the stack frame alive).  The first situation
       can only be remedied by explicitly breaking the cycles; the latter two
       situations can be resolved by storing ``None`` in ``sys.last_traceback``.
-      Circular references which are garbage are detected when the option cycle
-      detector is enabled (it's on by default), but can only be cleaned up if
-      there are no Python- level :meth:`__del__` methods involved. Refer to the
-      documentation for the :mod:`gc` module for more information about how
-      :meth:`__del__` methods are handled by the cycle detector, particularly
-      the description of the ``garbage`` value.
+      Circular references which are garbage are detected and cleaned up when
+      the cyclic garbage collector is enabled (it's on by default). Refer to the
+      documentation for the :mod:`gc` module for more information about this
+      topic.
 
    .. warning::
 
@@ -1213,6 +1225,10 @@ Basic customization
    See :ref:`formatspec` for a description of the standard formatting syntax.
 
    The return value must be a string object.
+
+   .. versionchanged:: 3.4
+      The __format__ method of ``object`` itself raises a :exc:`TypeError`
+      if passed any non-empty string.
 
 
 .. _richcmpfuncs:
@@ -1631,6 +1647,8 @@ of these candidate metaclasses. If none of the candidate metaclasses meets
 that criterion, then the class definition will fail with ``TypeError``.
 
 
+.. _prepare:
+
 Preparing the class namespace
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1830,6 +1848,15 @@ through the container; for mappings, :meth:`__iter__` should be the same as
    considered to be false in a Boolean context.
 
 
+.. method:: object.__length_hint__(self)
+
+   Called to implement :func:`operator.length_hint`. Should return an estimated
+   length for the object (which may be greater or less than the actual length).
+   The length must be an integer ``>=`` 0. This method is purely an
+   optimization and is never required for correctness.
+
+   .. versionadded:: 3.4
+
 .. note::
 
    Slicing is done exclusively with the following three methods.  A call like ::
@@ -2023,11 +2050,13 @@ left undefined.
    ``&=``, ``^=``, ``|=``).  These methods should attempt to do the operation
    in-place (modifying *self*) and return the result (which could be, but does
    not have to be, *self*).  If a specific method is not defined, the augmented
-   assignment falls back to the normal methods.  For instance, to execute the
-   statement ``x += y``, where *x* is an instance of a class that has an
-   :meth:`__iadd__` method, ``x.__iadd__(y)`` is called.  If *x* is an instance
-   of a class that does not define a :meth:`__iadd__` method, ``x.__add__(y)``
-   and ``y.__radd__(x)`` are considered, as with the evaluation of ``x + y``.
+   assignment falls back to the normal methods.  For instance, if *x* is an
+   instance of a class with an :meth:`__iadd__` method, ``x += y`` is equivalent
+   to ``x = x.__iadd__(y)`` . Otherwise, ``x.__add__(y)`` and ``y.__radd__(x)``
+   are considered, as with the evaluation of ``x + y``. In certain situations,
+   augmented assignment can result in unexpected errors (see
+   :ref:`faq-augmented-assignment-tuple-error`), but this behavior is in
+   fact part of the data model.
 
 
 .. method:: object.__neg__(self)
@@ -2059,9 +2088,17 @@ left undefined.
 
 .. method:: object.__index__(self)
 
-   Called to implement :func:`operator.index`.  Also called whenever Python needs
-   an integer object (such as in slicing, or in the built-in :func:`bin`,
-   :func:`hex` and :func:`oct` functions). Must return an integer.
+   Called to implement :func:`operator.index`, and whenever Python needs to
+   losslessly convert the numeric object to an integer object (such as in
+   slicing, or in the built-in :func:`bin`, :func:`hex` and :func:`oct`
+   functions). Presence of this method indicates that the numeric object is
+   an integer type.  Must return an integer.
+
+   .. note::
+
+      When :meth:`__index__` is defined, :meth:`__int__` should also be defined,
+      and both shuld return the same value, in order to have a coherent integer
+      type class.
 
 
 .. _context-managers:

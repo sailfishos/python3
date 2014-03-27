@@ -1339,21 +1339,6 @@ class Misc:
             args = args + (col2, row2)
         return self._getints(self.tk.call(*args)) or None
     bbox = grid_bbox
-
-    def _gridconvvalue(self, value):
-        if isinstance(value, (str, _tkinter.Tcl_Obj)):
-            try:
-                svalue = str(value)
-                if not svalue:
-                    return None
-                elif '.' in svalue:
-                    return getdouble(svalue)
-                else:
-                    return getint(svalue)
-            except ValueError:
-                pass
-        return value
-
     def _grid_configure(self, command, index, cnf, kw):
         """Internal function."""
         if isinstance(cnf, str) and not kw:
@@ -1372,14 +1357,22 @@ class Misc:
             for i in range(0, len(words), 2):
                 key = words[i][1:]
                 value = words[i+1]
-                dict[key] = self._gridconvvalue(value)
+                if not value:
+                    value = None
+                elif '.' in str(value):
+                    value = getdouble(value)
+                else:
+                    value = getint(value)
+                dict[key] = value
             return dict
         res = self.tk.call(
                   ('grid', command, self._w, index)
                   + options)
         if len(options) == 1:
-            return self._gridconvvalue(res)
-
+            if not res: return None
+            # In Tk 7.5, -width can be a float
+            if '.' in res: return getdouble(res)
+            return getint(res)
     def grid_columnconfigure(self, index, cnf={}, **kw):
         """Configure column INDEX of a grid.
 
@@ -2199,45 +2192,6 @@ class Button(Widget):
         """
         return self.tk.call(self._w, 'invoke')
 
-
-# Indices:
-# XXX I don't like these -- take them away
-def AtEnd():
-    warnings.warn("tkinter.AtEnd will be removed in 3.4",
-                  DeprecationWarning, stacklevel=2)
-    return 'end'
-
-
-def AtInsert(*args):
-    warnings.warn("tkinter.AtInsert will be removed in 3.4",
-                  DeprecationWarning, stacklevel=2)
-    s = 'insert'
-    for a in args:
-        if a: s = s + (' ' + a)
-    return s
-
-
-def AtSelFirst():
-    warnings.warn("tkinter.AtSelFirst will be removed in 3.4",
-                  DeprecationWarning, stacklevel=2)
-    return 'sel.first'
-
-
-def AtSelLast():
-    warnings.warn("tkinter.AtSelLast will be removed in 3.4",
-                  DeprecationWarning, stacklevel=2)
-    return 'sel.last'
-
-
-def At(x, y=None):
-    warnings.warn("tkinter.At will be removed in 3.4",
-                  DeprecationWarning, stacklevel=2)
-    if y is None:
-        return '@%r' % (x,)
-    else:
-        return '@%r,%r' % (x, y)
-
-
 class Canvas(Widget, XView, YView):
     """Canvas widget to display graphical elements like lines or text."""
     def __init__(self, master=None, cnf={}, **kw):
@@ -2968,11 +2922,11 @@ class Text(Widget, XView, YView):
 
         """
         Widget.__init__(self, master, 'text', cnf, kw)
-    def bbox(self, *args):
+    def bbox(self, index):
         """Return a tuple of (x,y,width,height) which gives the bounding
-        box of the visible part of the character at the index in ARGS."""
+        box of the visible part of the character at the given index."""
         return self._getints(
-            self.tk.call((self._w, 'bbox') + args)) or None
+                self.tk.call(self._w, 'bbox', index)) or None
     def tk_textSelectTo(self, index):
         self.tk.call('tk_textSelectTo', self._w, index)
     def tk_textBackspace(self):
