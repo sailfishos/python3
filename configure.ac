@@ -3935,7 +3935,7 @@ int main(void) {
 }
 ]])],
 [ac_cv_posix_semaphores_enabled=yes],
-[ac_cv_posix_semaphores_enabled=no],
+[ac_cv_posix_semaphores_enabled=yes],
 [ac_cv_posix_semaphores_enabled=yes])
 )
 AC_MSG_RESULT($ac_cv_posix_semaphores_enabled)
@@ -3971,8 +3971,8 @@ int main(void){
 }
 ]])],
 [ac_cv_broken_sem_getvalue=no],
-[ac_cv_broken_sem_getvalue=yes],
-[ac_cv_broken_sem_getvalue=yes])
+[ac_cv_broken_sem_getvalue=no],
+[ac_cv_broken_sem_getvalue=no])
 )
 AC_MSG_RESULT($ac_cv_broken_sem_getvalue)
 if test $ac_cv_broken_sem_getvalue = yes

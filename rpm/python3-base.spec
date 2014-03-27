@@ -100,6 +100,7 @@ They are a documented part of stdlib, as a module 'test'.
 %package -n libpython%{so_version}
 Summary:        Python Interpreter shared library
 Group:          Development/Languages/Python
+Requires:       python3-base = %{version}
 
 %description -n libpython%{so_version}
 Python is an interpreted, object-oriented programming language, and is
@@ -146,12 +147,12 @@ LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH \
     make %{?_smp_mflags}
 
 %install
-# replace rest of /usr/local/bin/python or /usr/bin/python2.5 with /usr/bin/python3
+# replace rest of /usr/local/bin/python or /usr/bin/python2.5 or /usr/bin/python3m with /usr/bin/python3
 find . -path "./Parser" -prune \
     -o -path "./Python/makeopcodetargets.py" -prune \
     -o -name '*.py' -type f -print0 \
 | xargs -0          grep -lE '^#! *(/usr/.*bin/(env +)?)?python' \
-| xargs             sed -r -i -e '1s@^#![[:space:]]*(/usr/(local/)?bin/(env +)?)?python([0-9]+(\.[0-9]+)?)?@#!/usr/bin/python3@'
+| xargs             sed -r -i -e '1s@^#![[:space:]]*(/usr/(local/)?bin/(env +)?)?python([0-9]+(\.[0-9]+)?)?[m]?@#!/usr/bin/python3@'
 # the grep inbetween makes it much faster
 
 # install it
@@ -162,6 +163,10 @@ make \
 
 # remove .a
 find ${RPM_BUILD_ROOT} -name "*.a" -exec rm {} ";"
+
+# remove the rpm buildroot form the install record files
+find ${RPM_BUILD_ROOT} -name 'RECORD' -print0 | \
+    xargs -0 sed -i -e "s#${RPM_BUILD_ROOT}##g"
 
 # install "site-packages" and __pycache__ for third parties
 install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages
@@ -235,7 +240,7 @@ rm -rf $RPM_BUILD_ROOT
 # binary parts
 %dir %{sitedir}/lib-dynload
 %{dynlib array}
-%{dynlib atexit}
+#%{dynlib atexit}
 %{dynlib audioop}
 %{dynlib binascii}
 %{dynlib _bisect}
@@ -294,6 +299,9 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _sha256}
 %{dynlib _sha512}
 %{dynlib xxlimited}
+# new in python 3.4
+%{dynlib _opcode}
+%{dynlib _testimportmultiple}
 # python parts
 %dir /usr/lib/python%{python_version}
 %dir /usr/lib/python%{python_version}/site-packages
@@ -329,6 +337,17 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/curses
 %{sitedir}/site-packages/README
 %{sitedir}/__pycache__
+# new in python 3.4
+%{sitedir}/asyncio
+%{sitedir}/ensurepip
+%{sitedir}/site-packages/__pycache__
+%{sitedir}/site-packages/pip
+%{sitedir}/site-packages/pip*.dist-info
+%{sitedir}/site-packages/setuptools
+%{sitedir}/site-packages/setuptools*.dist-info
+%{sitedir}/site-packages/pkg_resources.py
+%{sitedir}/site-packages/easy_install.py
+%{sitedir}/site-packages/_markerlib
 # executables
 %attr(755, root, root) %{_bindir}/pydoc3
 %attr(755, root, root) %{_bindir}/pydoc%{python_version}
@@ -337,3 +356,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755, root, root) %{_bindir}/python3
 %attr(755, root, root) %{_bindir}/pyvenv
 %attr(755, root, root) %{_bindir}/pyvenv-%{python_version}
+# new in python 3.4
+%attr(755, root, root) %{_bindir}/easy_install-%{python_version}
+%attr(755, root, root) %{_bindir}/pip3
+%attr(755, root, root) %{_bindir}/pip%{python_version}
