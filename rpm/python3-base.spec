@@ -32,14 +32,14 @@ Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python-2.0
 Group:          Development/Languages/Python
-Version:        3.3.5
+Version:        3.4.0
 Release:        0
 Source:         %{name}-%{version}.tar.gz
 Patch0:         skip-sem-test.patch
 
-%define         python_version  3.3
-%define         python_version_abitag   33
-%define         python_version_soname   3_3
+%define         python_version  3.4
+%define         python_version_abitag   34
+%define         python_version_soname   3_4
 %define         sitedir         %{_libdir}/python%{python_version}
 
 # three possible ABI kinds: m - pymalloc, d - debug build
