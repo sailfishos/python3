@@ -182,17 +182,24 @@ ascii_escape_unicode(PyObject *pystr)
     /* Compute the output size */
     for (i = 0, output_size = 2; i < input_chars; i++) {
         Py_UCS4 c = PyUnicode_READ(kind, input, i);
-        if (S_CHAR(c))
-            output_size++;
+        Py_ssize_t d;
+        if (S_CHAR(c)) {
+            d = 1;
+        }
         else {
             switch(c) {
             case '\\': case '"': case '\b': case '\f':
             case '\n': case '\r': case '\t':
-                output_size += 2; break;
+                d = 2; break;
             default:
-                output_size += c >= 0x10000 ? 12 : 6;
+                d = c >= 0x10000 ? 12 : 6;
             }
         }
+        if (output_size > PY_SSIZE_T_MAX - d) {
+            PyErr_SetString(PyExc_OverflowError, "string is too long to escape");
+            return NULL;
+        }
+        output_size += d;
     }
 
     rval = PyUnicode_New(output_size, 127);
@@ -287,7 +294,7 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
             } \
         } \
         if (PyList_Append(chunks, chunk)) { \
-            Py_DECREF(chunk); \
+            Py_CLEAR(chunk); \
             goto bail; \
         } \
         Py_CLEAR(chunk); \
@@ -941,6 +948,10 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     kind = PyUnicode_KIND(pystr);
     length = PyUnicode_GET_LENGTH(pystr);
 
+    if (idx < 0) {
+        PyErr_SetString(PyExc_ValueError, "idx cannot be negative");
+        return NULL;
+    }
     if (idx >= length) {
         raise_stop_iteration(idx);
         return NULL;
@@ -1551,6 +1562,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
             if (item == NULL)
                 goto bail;
             PyList_SET_ITEM(items, i, item);
+            item = NULL;
             Py_DECREF(key);
         }
     }

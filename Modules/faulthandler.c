@@ -144,6 +144,10 @@ faulthandler_get_fileno(PyObject *file, int *p_fd)
             PyErr_SetString(PyExc_RuntimeError, "unable to get sys.stderr");
             return NULL;
         }
+        if (file == Py_None) {
+            PyErr_SetString(PyExc_RuntimeError, "sys.stderr is None");
+            return NULL;
+        }
     }
 
     result = _PyObject_CallMethodId(file, &PyId_fileno, "");
@@ -805,23 +809,15 @@ faulthandler_read_null(PyObject *self, PyObject *args)
 {
     volatile int *x;
     volatile int y;
-    int release_gil = 0;
-    if (!PyArg_ParseTuple(args, "|i:_read_null", &release_gil))
-        return NULL;
 
     x = NULL;
-    if (release_gil) {
-        Py_BEGIN_ALLOW_THREADS
-        y = *x;
-        Py_END_ALLOW_THREADS
-    } else
-        y = *x;
+    y = *x;
     return PyLong_FromLong(y);
 
 }
 
-static PyObject *
-faulthandler_sigsegv(PyObject *self, PyObject *args)
+static void
+faulthandler_raise_sigsegv(void)
 {
 #if defined(MS_WINDOWS)
     /* For SIGSEGV, faulthandler_fatal_error() restores the previous signal
@@ -840,6 +836,22 @@ faulthandler_sigsegv(PyObject *self, PyObject *args)
 #else
     raise(SIGSEGV);
 #endif
+}
+
+static PyObject *
+faulthandler_sigsegv(PyObject *self, PyObject *args)
+{
+    int release_gil = 0;
+    if (!PyArg_ParseTuple(args, "|i:_read_null", &release_gil))
+        return NULL;
+
+    if (release_gil) {
+        Py_BEGIN_ALLOW_THREADS
+        faulthandler_raise_sigsegv();
+        Py_END_ALLOW_THREADS
+    } else {
+        faulthandler_raise_sigsegv();
+    }
     Py_RETURN_NONE;
 }
 
@@ -999,12 +1011,12 @@ static PyMethodDef module_methods[] = {
                 "'signum' registered by register()")},
 #endif
 
-    {"_read_null", faulthandler_read_null, METH_VARARGS,
-     PyDoc_STR("_read_null(release_gil=False): read from NULL, raise "
+    {"_read_null", faulthandler_read_null, METH_NOARGS,
+     PyDoc_STR("_read_null(): read from NULL, raise "
                "a SIGSEGV or SIGBUS signal depending on the platform")},
     {"_sigsegv", faulthandler_sigsegv, METH_VARARGS,
-     PyDoc_STR("_sigsegv(): raise a SIGSEGV signal")},
-    {"_sigabrt", faulthandler_sigabrt, METH_VARARGS,
+     PyDoc_STR("_sigsegv(release_gil=False): raise a SIGSEGV signal")},
+    {"_sigabrt", faulthandler_sigabrt, METH_NOARGS,
      PyDoc_STR("_sigabrt(): raise a SIGABRT signal")},
     {"_sigfpe", (PyCFunction)faulthandler_sigfpe, METH_NOARGS,
      PyDoc_STR("_sigfpe(): raise a SIGFPE signal")},

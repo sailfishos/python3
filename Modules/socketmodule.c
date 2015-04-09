@@ -33,8 +33,8 @@ Module interface:
 - socket.ntohl(32 bit value) --> new int object
 - socket.htons(16 bit value) --> new int object
 - socket.htonl(32 bit value) --> new int object
-- socket.getaddrinfo(host, port [, family, socktype, proto, flags])
-    --> List of (family, socktype, proto, canonname, sockaddr)
+- socket.getaddrinfo(host, port [, family, type, proto, flags])
+    --> List of (family, type, proto, canonname, sockaddr)
 - socket.getnameinfo(sockaddr, flags) --> (host, port)
 - socket.AF_INET, socket.SOCK_STREAM, etc.: constants from <socket.h>
 - socket.has_ipv6: boolean value indicating if IPv6 is supported
@@ -1165,7 +1165,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
     }
 #endif
 
-#ifdef HAVE_LINUX_CAN_H
+#ifdef AF_CAN
     case AF_CAN:
     {
         struct sockaddr_can *a = (struct sockaddr_can *)addr;
@@ -1589,7 +1589,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     }
 #endif
 
-#ifdef HAVE_LINUX_CAN_H
+#if defined(AF_CAN) && defined(CAN_RAW) && defined(CAN_BCM)
     case AF_CAN:
         switch (s->sock_proto) {
         case CAN_RAW:
@@ -1796,7 +1796,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
     }
 #endif
 
-#ifdef HAVE_LINUX_CAN_H
+#ifdef AF_CAN
     case AF_CAN:
     {
         *len_ret = sizeof (struct sockaddr_can);
@@ -3493,7 +3493,7 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
     for (; ndatabufs < ndataparts; ndatabufs++) {
         if (!PyArg_Parse(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
                          "y*;sendmsg() argument 1 must be an iterable of "
-                         "buffer-compatible objects",
+                         "bytes-like objects",
                          &databufs[ndatabufs]))
             goto finally;
         iovs[ndatabufs].iov_base = databufs[ndatabufs].buf;
@@ -3650,12 +3650,12 @@ PyDoc_STRVAR(sendmsg_doc,
 Send normal and ancillary data to the socket, gathering the\n\
 non-ancillary data from a series of buffers and concatenating it into\n\
 a single message.  The buffers argument specifies the non-ancillary\n\
-data as an iterable of buffer-compatible objects (e.g. bytes objects).\n\
+data as an iterable of bytes-like objects (e.g. bytes objects).\n\
 The ancdata argument specifies the ancillary data (control messages)\n\
 as an iterable of zero or more tuples (cmsg_level, cmsg_type,\n\
 cmsg_data), where cmsg_level and cmsg_type are integers specifying the\n\
 protocol level and protocol-specific type respectively, and cmsg_data\n\
-is a buffer-compatible object holding the associated data.  The flags\n\
+is a bytes-like object holding the associated data.  The flags\n\
 argument defaults to 0 and has the same meaning as for send().  If\n\
 address is supplied and not None, it sets a destination address for\n\
 the message.  The return value is the number of bytes of non-ancillary\n\
@@ -3868,8 +3868,13 @@ sock_dealloc(PySocketSockObject *s)
 static PyObject *
 sock_repr(PySocketSockObject *s)
 {
+    long sock_fd;
+    /* On Windows, this test is needed because SOCKET_T is unsigned */
+    if (s->sock_fd == INVALID_SOCKET) {
+        sock_fd = -1;
+    }
 #if SIZEOF_SOCKET_T > SIZEOF_LONG
-    if (s->sock_fd > LONG_MAX) {
+    else if (s->sock_fd > LONG_MAX) {
         /* this can occur on Win64, and actually there is a special
            ugly printf formatter for decimal pointer length integer
            printing, only bother if necessary*/
@@ -3879,9 +3884,11 @@ sock_repr(PySocketSockObject *s)
         return NULL;
     }
 #endif
+    else
+        sock_fd = (long)s->sock_fd;
     return PyUnicode_FromFormat(
         "<socket object, fd=%ld, family=%d, type=%d, proto=%d>",
-        (long)s->sock_fd, s->sock_family,
+        sock_fd, s->sock_family,
         s->sock_type,
         s->sock_proto);
 }
@@ -5292,8 +5299,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 }
 
 PyDoc_STRVAR(getaddrinfo_doc,
-"getaddrinfo(host, port [, family, socktype, proto, flags])\n\
-    -> list of (family, socktype, proto, canonname, sockaddr)\n\
+"getaddrinfo(host, port [, family, type, proto, flags])\n\
+    -> list of (family, type, proto, canonname, sockaddr)\n\
 \n\
 Resolve host and port into addrinfo struct.");
 

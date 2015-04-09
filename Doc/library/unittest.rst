@@ -51,11 +51,11 @@ test runner
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
-   `Nose <http://code.google.com/p/python-nose/>`_ and `py.test <http://pytest.org>`_
+   `Nose <https://nose.readthedocs.org/en/latest/>`_ and `py.test <http://pytest.org>`_
       Third-party unittest frameworks with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
-   `The Python Testing Tools Taxonomy <http://wiki.python.org/moin/PythonTestingToolsTaxonomy>`_
+   `The Python Testing Tools Taxonomy <https://wiki.python.org/moin/PythonTestingToolsTaxonomy>`_
       An extensive list of Python testing tools including functional testing
       frameworks and mock object libraries.
 
@@ -67,7 +67,7 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <http://buildbot.net/trac>`_, `Jenkins <http://jenkins-ci.org>`_
+   `Buildbot <http://buildbot.net/>`_, `Jenkins <http://jenkins-ci.org/>`_
    or  `Hudson <http://hudson-ci.org/>`_.
 
 
@@ -674,9 +674,9 @@ Test cases
    .. method:: setUp()
 
       Method called to prepare the test fixture.  This is called immediately
-      before calling the test method; any exception raised by this method will
-      be considered an error rather than a test failure. The default
-      implementation does nothing.
+      before calling the test method; other than :exc:`AssertionError` or :exc:`SkipTest`,
+      any exception raised by this method will be considered an error rather than
+      a test failure. The default implementation does nothing.
 
 
    .. method:: tearDown()
@@ -684,10 +684,10 @@ Test cases
       Method called immediately after the test method has been called and the
       result recorded.  This is called even if the test method raised an
       exception, so the implementation in subclasses may need to be particularly
-      careful about checking internal state.  Any exception raised by this
-      method will be considered an error rather than a test failure.  This
-      method will only be called if the :meth:`setUp` succeeds, regardless of
-      the outcome of the test method. The default implementation does nothing.
+      careful about checking internal state.  Any exception, other than :exc:`AssertionError`
+      or :exc:`SkipTest`, raised by this method will be considered an error rather than a
+      test failure.  This method will only be called if the :meth:`setUp` succeeds,
+      regardless of the outcome of the test method. The default implementation does nothing.
 
 
    .. method:: setUpClass()
@@ -1644,7 +1644,7 @@ Loading and running tests
       function. If this exists then it will be called with *loader*, *tests*,
       *pattern*.
 
-      If load_tests exists then discovery does *not* recurse into the package,
+      If ``load_tests`` exists then discovery does *not* recurse into the package,
       ``load_tests`` is responsible for loading all tests in the package.
 
       The pattern is deliberately not stored as a loader attribute so that
@@ -1807,14 +1807,14 @@ Loading and running tests
       Called after the test case *test* has been executed, regardless of the
       outcome.
 
-   .. method:: startTestRun(test)
+   .. method:: startTestRun()
 
       Called once before any tests are executed.
 
       .. versionadded:: 3.1
 
 
-   .. method:: stopTestRun(test)
+   .. method:: stopTestRun()
 
       Called once after all tests are executed.
 

@@ -24,6 +24,7 @@
 # python.exe build_ssl.py Release Win32
 
 import os, sys, re, shutil
+import subprocess
 
 # Find all "foo.exe" files on the PATH.
 def find_all_on_path(filename, extras = None):
@@ -46,29 +47,28 @@ def find_all_on_path(filename, extras = None):
 # is available.
 def find_working_perl(perls):
     for perl in perls:
-        fh = os.popen('"%s" -e "use Win32;"' % perl)
-        fh.read()
-        rc = fh.close()
-        if rc:
+        try:
+            subprocess.check_output([perl, "-e", "use Win32;"])
+        except subprocess.CalledProcessError:
             continue
-        return perl
-    print("Can not find a suitable PERL:")
+        else:
+            return perl
+
     if perls:
-        print(" the following perl interpreters were found:")
+        print("The following perl interpreters were found:")
         for p in perls:
             print(" ", p)
         print(" None of these versions appear suitable for building OpenSSL")
     else:
-        print(" NO perl interpreters were found on this machine at all!")
+        print("NO perl interpreters were found on this machine at all!")
     print(" Please install ActivePerl and ensure it appears on your path")
-    return None
 
 # Fetch SSL directory from VC properties
 def get_ssl_dir():
     propfile = (os.path.join(os.path.dirname(__file__), 'pyproject.props'))
-    with open(propfile) as f:
+    with open(propfile, encoding='utf-8-sig') as f:
         m = re.search('openssl-([^<]+)<', f.read())
-        return "..\..\openssl-"+m.group(1)
+        return "..\externals\openssl-"+m.group(1)
 
 
 def create_makefile64(makefile, m32):
@@ -181,6 +181,17 @@ def main():
     ssl_dir = get_ssl_dir()
     if ssl_dir is None:
         sys.exit(1)
+
+    # add our copy of NASM to PATH.  It will be on the same level as openssl
+    for dir in os.listdir(os.path.join(ssl_dir, os.pardir)):
+        if dir.startswith('nasm'):
+            nasm_dir = os.path.join(ssl_dir, os.pardir, dir)
+            nasm_dir = os.path.abspath(nasm_dir)
+            os.environ['PATH'] += os.pathsep.join(['', nasm_dir])
+            break
+    else:
+        print('NASM was not found, make sure it is on PATH')
+
 
     old_cd = os.getcwd()
     try:

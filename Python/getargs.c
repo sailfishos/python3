@@ -200,8 +200,6 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 {
     char msgbuf[256];
     int levels[32];
-    freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
-    freelist_t freelist = {static_entries, 0, 0};
     const char *fname = NULL;
     const char *message = NULL;
     int min = -1;
@@ -212,6 +210,12 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
     Py_ssize_t i, len;
     char *msg;
     int compat = flags & FLAG_COMPAT;
+    freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
+    freelist_t freelist;
+
+    freelist.entries = static_entries;
+    freelist.first_available = 0;
+    freelist.entries_malloced = 0;
 
     assert(compat || (args != (PyObject*)NULL));
     flags = flags & ~FLAG_COMPAT;
@@ -845,7 +849,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     /* XXX WAAAAH!  's', 'y', 'z', 'u', 'Z', 'e', 'w' codes all
        need to be cleaned up! */
 
-    case 'y': {/* any buffer-like object, but not PyUnicode */
+    case 'y': {/* any bytes-like object */
         void **p = (void **)va_arg(*p_va, char **);
         char *buf;
         Py_ssize_t count;
@@ -876,8 +880,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         break;
     }
 
-    case 's': /* text string */
-    case 'z': /* text string or None */
+    case 's': /* text string or bytes-like object */
+    case 'z': /* text string, bytes-like object or None */
     {
         if (*format == '*') {
             /* "s*" or "z*" */
@@ -893,7 +897,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                                       arg, msgbuf, bufsize);
                 PyBuffer_FillInfo(p, arg, sarg, len, 1, 0);
             }
-            else { /* any buffer-like object */
+            else { /* any bytes-like object */
                 char *buf;
                 if (getbuffer(arg, p, &buf) < 0)
                     return converterr(buf, arg, msgbuf, bufsize);
@@ -904,7 +908,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                     arg, msgbuf, bufsize);
             }
             format++;
-        } else if (*format == '#') { /* any buffer-like object */
+        } else if (*format == '#') { /* a string or read-only bytes-like object */
             /* "s#" or "z#" */
             void **p = (void **)va_arg(*p_va, char **);
             FETCH_SIZE;
@@ -922,7 +926,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 *p = sarg;
                 STORE_SIZE(len);
             }
-            else { /* any buffer-like object */
+            else { /* read-only bytes-like object */
                 /* XXX Really? */
                 char *buf;
                 Py_ssize_t count = convertbuffer(arg, p, &buf);
@@ -963,7 +967,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     {
         Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
 
-        if (*format == '#') { /* any buffer-like object */
+        if (*format == '#') {
             /* "s#" or "Z#" */
             FETCH_SIZE;
 
@@ -1439,7 +1443,11 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     Py_ssize_t nargs, nkeywords;
     PyObject *current_arg;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
-    freelist_t freelist = {static_entries, 0, 0};
+    freelist_t freelist;
+
+    freelist.entries = static_entries;
+    freelist.first_available = 0;
+    freelist.entries_malloced = 0;
 
     assert(args != NULL && PyTuple_Check(args));
     assert(keywords == NULL || PyDict_Check(keywords));

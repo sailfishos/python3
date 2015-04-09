@@ -176,6 +176,18 @@ class TestEnum(unittest.TestCase):
                 set(['__class__', '__doc__', '__module__', 'name', 'value', 'wowser']),
                 )
 
+    def test_dir_on_sub_with_behavior_on_super(self):
+        # see issue22506
+        class SuperEnum(Enum):
+            def invisible(self):
+                return "did you see me?"
+        class SubEnum(SuperEnum):
+            sample = 5
+        self.assertEqual(
+                set(dir(SubEnum.sample)),
+                set(['__class__', '__doc__', '__module__', 'name', 'value', 'invisible']),
+                )
+
     def test_enum_in_enum_out(self):
         Season = self.Season
         self.assertIs(Season(Season.WINTER), Season.WINTER)
@@ -1528,9 +1540,7 @@ class TestStdLib(unittest.TestCase):
         helper = pydoc.Helper(output=output)
         helper(self.Color)
         result = output.getvalue().strip()
-        if result != expected_text:
-            print_diffs(expected_text, result)
-            self.fail("outputs are not equal, see diff above")
+        self.assertEqual(result, expected_text)
 
     def test_inspect_getmembers(self):
         values = dict((

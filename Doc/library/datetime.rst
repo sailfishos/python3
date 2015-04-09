@@ -558,7 +558,7 @@ Instance methods:
    Return a 3-tuple, (ISO year, ISO week number, ISO weekday).
 
    The ISO calendar is a widely used variant of the Gregorian calendar. See
-   http://www.phys.uu.nl/~vgent/calendar/isocalendar.htm for a good
+   http://www.staff.science.uu.nl/~gent0113/calendar/isocalendar.htm for a good
    explanation.
 
    The ISO year consists of 52 or 53 full weeks, and where a week starts on a
@@ -1686,12 +1686,12 @@ only EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
 .. seealso::
 
-   `pytz <http://pypi.python.org/pypi/pytz/>`_
-      The standard library has no :class:`tzinfo` instances except for UTC, but
-      there exists a third-party library which brings the *IANA timezone
-      database* (also known as the Olson database) to Python: *pytz*.
+   `pytz <https://pypi.python.org/pypi/pytz/>`_
+      The standard library has :class:`timezone` class for handling arbitrary
+      fixed offsets from UTC and :attr:`timezone.utc` as UTC timezone instance.
 
-      *pytz* contains up-to-date information and its usage is recommended.
+      *pytz* library brings the *IANA timezone database* (also known as the
+      Olson database) to Python and its usage is recommended.
 
    `IANA timezone database <http://www.iana.org/time-zones>`_
       The Time Zone Database (often called tz or zoneinfo) contains code and
@@ -1727,6 +1727,8 @@ made to civil time.
   ``tzname(dt)`` returns a string 'UTCsHH:MM', where s is the sign of
   *offset*, HH and MM are two digits of ``offset.hours`` and
   ``offset.minutes`` respectively.
+
+  .. versionadded:: 3.2
 
 .. method:: timezone.utcoffset(dt)
 

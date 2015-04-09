@@ -19,6 +19,12 @@ from distutils.spawn import find_executable
 
 cross_compiling = "_PYTHON_HOST_PLATFORM" in os.environ
 
+# Add special CFLAGS reserved for building the interpreter and the stdlib
+# modules (Issue #21121).
+cflags = sysconfig.get_config_var('CFLAGS')
+py_cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST')
+sysconfig.get_config_vars()['CFLAGS'] = cflags + ' ' + py_cflags_nodist
+
 def get_platform():
     # cross build
     if "_PYTHON_HOST_PLATFORM" in os.environ:
@@ -246,7 +252,7 @@ class PyBuildExt(build_ext):
 
         build_ext.build_extensions(self)
 
-        longest = max([len(e.name) for e in self.extensions])
+        longest = max([len(e.name) for e in self.extensions], default=0)
         if self.failed:
             longest = max(longest, max([len(name) for name in self.failed]))
 
@@ -697,7 +703,9 @@ class PyBuildExt(build_ext):
         if host_platform == 'darwin':
             os_release = int(os.uname()[2].split('.')[0])
             dep_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
-            if dep_target and dep_target.split('.') < ['10', '5']:
+            if (dep_target and
+                    (tuple(int(n) for n in dep_target.split('.')[0:2])
+                        < (10, 5) ) ):
                 os_release = 8
             if os_release < 9:
                 # MacOSX 10.4 has a broken readline. Don't try to build
@@ -1022,8 +1030,16 @@ class PyBuildExt(build_ext):
             if db_setup_debug:
                 print("bsddb using BerkeleyDB lib:", db_ver, dblib)
                 print("bsddb lib dir:", dblib_dir, " inc dir:", db_incdir)
-            db_incs = [db_incdir]
             dblibs = [dblib]
+            # Only add the found library and include directories if they aren't
+            # already being searched. This avoids an explicit runtime library
+            # dependency.
+            if db_incdir in inc_dirs:
+                db_incs = None
+            else:
+                db_incs = [db_incdir]
+            if dblib_dir[0] in lib_dirs:
+                dblib_dir = None
         else:
             if db_setup_debug: print("db: no appropriate library found")
             db_incs = None
@@ -1134,11 +1150,13 @@ class PyBuildExt(build_ext):
             # can end up with a bad search path order.
             if sqlite_incdir not in self.compiler.include_dirs:
                 include_dirs.append(sqlite_incdir)
+            # avoid a runtime library path for a system library dir
+            if sqlite_libdir and sqlite_libdir[0] in lib_dirs:
+                sqlite_libdir = None
             exts.append(Extension('_sqlite3', sqlite_srcs,
                                   define_macros=sqlite_defines,
                                   include_dirs=include_dirs,
                                   library_dirs=sqlite_libdir,
-                                  runtime_library_dirs=sqlite_libdir,
                                   extra_link_args=sqlite_extra_link_args,
                                   libraries=["sqlite3",]))
         else:
@@ -1203,7 +1221,7 @@ class PyBuildExt(build_ext):
                                 libraries = gdbm_libs)
                             break
                 elif cand == "bdb":
-                    if db_incs is not None:
+                    if dblibs:
                         if dbm_setup_debug: print("building dbm using bdb")
                         dbmext = Extension('_dbm', ['_dbmmodule.c'],
                                            library_dirs=dblib_dir,

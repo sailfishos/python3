@@ -85,22 +85,22 @@ are always available.  They are listed here in alphabetical order.
    :meth:`__index__` method that returns an integer.
 
 
-.. function:: bool([x])
+.. class:: bool([x])
 
-   Convert a value to a Boolean, using the standard :ref:`truth testing
-   procedure <truth>`.  If *x* is false or omitted, this returns ``False``;
-   otherwise it returns ``True``. :class:`bool` is also a class, which is a
-   subclass of :class:`int` (see :ref:`typesnumeric`).  Class :class:`bool`
-   cannot be subclassed further.  Its only instances are ``False`` and
+   Return a Boolean value, i.e. one of ``True`` or ``False``.  *x* is converted
+   using the standard :ref:`truth testing procedure <truth>`.  If *x* is false
+   or omitted, this returns ``False``; otherwise it returns ``True``.  The
+   :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
+   It cannot be subclassed further.  Its only instances are ``False`` and
    ``True`` (see :ref:`bltin-boolean-values`).
 
    .. index:: pair: Boolean; type
 
 
 .. _func-bytearray:
-.. function:: bytearray([source[, encoding[, errors]]])
+.. class:: bytearray([source[, encoding[, errors]]])
 
-   Return a new array of bytes.  The :class:`bytearray` type is a mutable
+   Return a new array of bytes.  The :class:`bytearray` class is a mutable
    sequence of integers in the range 0 <= x < 256.  It has most of the usual
    methods of mutable sequences, described in :ref:`typesseq-mutable`, as well
    as most methods that the :class:`bytes` type has, see :ref:`bytes-methods`.
@@ -127,7 +127,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-bytes:
-.. function:: bytes([source[, encoding[, errors]]])
+.. class:: bytes([source[, encoding[, errors]]])
 
    Return a new "bytes" object, which is an immutable sequence of integers in
    the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
@@ -156,7 +156,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: chr(i)
 
-   Return the string representing a character whose Unicode codepoint is the integer
+   Return the string representing a character whose Unicode code point is the integer
    *i*.  For example, ``chr(97)`` returns the string ``'a'``. This is the
    inverse of :func:`ord`.  The valid range for the argument is from 0 through
    1,114,111 (0x10FFFF in base 16).  :exc:`ValueError` will be raised if *i* is
@@ -210,7 +210,7 @@ are always available.  They are listed here in alphabetical order.
    The optional arguments *flags* and *dont_inherit* control which future
    statements (see :pep:`236`) affect the compilation of *source*.  If neither
    is present (or both are zero) the code is compiled with those future
-   statements that are in effect in the code that is calling compile.  If the
+   statements that are in effect in the code that is calling :func:`compile`.  If the
    *flags* argument is given and *dont_inherit* is not (or is zero) then the
    future statements specified by the *flags* argument are used in addition to
    those that would be used anyway. If *dont_inherit* is a non-zero integer then
@@ -231,6 +231,9 @@ are always available.  They are listed here in alphabetical order.
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
    and :exc:`TypeError` if the source contains null bytes.
 
+   If you want to parse Python code into its AST representation, see
+   :func:`ast.parse`.
+
    .. note::
 
       When compiling a string with multi-line code in ``'single'`` or
@@ -243,15 +246,16 @@ are always available.  They are listed here in alphabetical order.
       does not have to end in a newline anymore.  Added the *optimize* parameter.
 
 
-.. function:: complex([real[, imag]])
+.. class:: complex([real[, imag]])
 
-   Create a complex number with the value *real* + *imag*\*j or convert a string or
-   number to a complex number.  If the first parameter is a string, it will be
-   interpreted as a complex number and the function must be called without a second
-   parameter.  The second parameter can never be a string. Each argument may be any
-   numeric type (including complex). If *imag* is omitted, it defaults to zero and
-   the function serves as a numeric conversion function like :func:`int`
-   and :func:`float`.  If both arguments are omitted, returns ``0j``.
+   Return a complex number with the value *real* + *imag*\*j or convert a string
+   or number to a complex number.  If the first parameter is a string, it will
+   be interpreted as a complex number and the function must be called without a
+   second parameter.  The second parameter can never be a string. Each argument
+   may be any numeric type (including complex).  If *imag* is omitted, it
+   defaults to zero and the constructor serves as a numeric conversion like
+   :class:`int` and :class:`float`.  If both arguments are omitted, returns
+   ``0j``.
 
    .. note::
 
@@ -272,14 +276,13 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-dict:
-.. function:: dict(**kwarg)
-              dict(mapping, **kwarg)
-              dict(iterable, **kwarg)
+.. class:: dict(**kwarg)
+           dict(mapping, **kwarg)
+           dict(iterable, **kwarg)
    :noindex:
 
    Create a new dictionary.  The :class:`dict` object is the dictionary class.
-   See :class:`dict` and :ref:`typesmapping` for documentation about this
-   class.
+   See :class:`dict` and :ref:`typesmapping` for documentation about this class.
 
    For other containers see the built-in :class:`list`, :class:`set`, and
    :class:`tuple` classes, as well as the :mod:`collections` module.
@@ -410,6 +413,7 @@ are always available.  They are listed here in alphabetical order.
    See :func:`ast.literal_eval` for a function that can safely evaluate strings
    with expressions containing only literals.
 
+.. index:: builtin: exec
 
 .. function:: exec(object[, globals[, locals]])
 
@@ -469,13 +473,13 @@ are always available.  They are listed here in alphabetical order.
    elements of *iterable* for which *function* returns false.
 
 
-.. function:: float([x])
+.. class:: float([x])
 
    .. index::
       single: NaN
       single: Infinity
 
-   Convert a string or a number to floating point.
+   Return a floating point number constructed from a number or string *x*.
 
    If the argument is a string, it should contain a decimal number, optionally
    preceded by a sign, and optionally embedded in whitespace.  The optional
@@ -538,7 +542,7 @@ are always available.  They are listed here in alphabetical order.
    effect as calling :func:`str(value) <str>`.
 
    A call to ``format(value, format_spec)`` is translated to
-   ``type(value).__format__(format_spec)`` which bypasses the instance
+   ``type(value).__format__(value, format_spec)`` which bypasses the instance
    dictionary when searching for the value's :meth:`__format__` method.  A
    :exc:`TypeError` exception is raised if the method search reaches
    :mod:`object` and the *format_spec* is non-empty, or if either the
@@ -550,7 +554,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-frozenset:
-.. function:: frozenset([iterable])
+.. class:: frozenset([iterable])
    :noindex:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
@@ -663,12 +667,13 @@ are always available.  They are listed here in alphabetical order.
    to provide elaborate line editing and history features.
 
 
-.. function:: int(x=0)
-              int(x, base=10)
+.. class:: int(x=0)
+           int(x, base=10)
 
-   Convert a number or string *x* to an integer, or return ``0`` if no
-   arguments are given.  If *x* is a number, return :meth:`x.__int__()
-   <object.__int__>`.  For floating point numbers, this truncates towards zero.
+   Return an integer object constructed from a number or string *x*, or return
+   ``0`` if no arguments are given.  If *x* is a number, return
+   :meth:`x.__int__() <object.__int__>`.  For floating point numbers, this
+   truncates towards zero.
 
    If *x* is not a number or if *base* is given, then *x* must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
@@ -742,11 +747,12 @@ are always available.  They are listed here in alphabetical order.
 .. function:: len(s)
 
    Return the length (the number of items) of an object.  The argument may be a
-   sequence (string, tuple or list) or a mapping (dictionary).
+   sequence (such as a string, bytes, tuple, list, or range) or a collection
+   (such as a dictionary, set, or frozen set).
 
 
 .. _func-list:
-.. function:: list([iterable])
+.. class:: list([iterable])
    :noindex:
 
    Rather than being a function, :class:`list` is actually a mutable
@@ -773,7 +779,7 @@ are always available.  They are listed here in alphabetical order.
    already arranged into argument tuples, see :func:`itertools.starmap`\.
 
 
-.. function:: max(iterable, *[, default, key])
+.. function:: max(iterable, *[, key, default])
               max(arg1, arg2, *args[, key])
 
    Return the largest item in an iterable or the largest of two or more
@@ -781,7 +787,7 @@ are always available.  They are listed here in alphabetical order.
 
    If one positional argument is provided, it should be an :term:`iterable`.
    The largest item in the iterable is returned.  If two or more positional
-   arguments are provided, the smallest of the positional arguments is
+   arguments are provided, the largest of the positional arguments is
    returned.
 
    There are two optional keyword-only arguments. The *key* argument specifies
@@ -807,7 +813,7 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable, *[, default, key])
+.. function:: min(iterable, *[, key, default])
               min(arg1, arg2, *args[, key])
 
    Return the smallest item in an iterable or the smallest of two or more
@@ -832,6 +838,7 @@ are always available.  They are listed here in alphabetical order.
    .. versionadded:: 3.4
       The *default* keyword-only argument.
 
+
 .. function:: next(iterator[, default])
 
    Retrieve the next item from the *iterator* by calling its
@@ -839,7 +846,7 @@ are always available.  They are listed here in alphabetical order.
    if the iterator is exhausted, otherwise :exc:`StopIteration` is raised.
 
 
-.. function:: object()
+.. class:: object()
 
    Return a new featureless object.  :class:`object` is a base for all classes.
    It has the methods that are common to all instances of Python classes.  This
@@ -932,15 +939,17 @@ are always available.  They are listed here in alphabetical order.
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
    dependent (whatever :func:`locale.getpreferredencoding` returns), but any
-   encoding supported by Python can be used.  See the :mod:`codecs` module for
+   :term:`text encoding` supported by Python
+   can be used.  See the :mod:`codecs` module for
    the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled--this cannot be used in binary mode.
-   A variety of standard error handlers are available, though any
+   A variety of standard error handlers are available
+   (listed under :ref:`error-handlers`), though any
    error handling name that has been registered with
    :func:`codecs.register_error` is also valid.  The standard names
-   are:
+   include:
 
    * ``'strict'`` to raise a :exc:`ValueError` exception if there is
      an encoding error.  The default value of ``None`` has the same
@@ -1050,6 +1059,7 @@ are always available.  They are listed here in alphabetical order.
       The file is now non-inheritable.
 
    .. deprecated-removed:: 3.4 4.0
+
       The ``'U'`` mode.
 
 
@@ -1080,8 +1090,8 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
 
-   Print *objects* to the stream *file*, separated by *sep* and followed by
-   *end*.  *sep*, *end* and *file*, if present, must be given as keyword
+   Print *objects* to the text stream *file*, separated by *sep* and followed
+   by *end*.  *sep*, *end* and *file*, if present, must be given as keyword
    arguments.
 
    All non-keyword arguments are converted to strings like :func:`str` does and
@@ -1091,21 +1101,26 @@ are always available.  They are listed here in alphabetical order.
    *end*.
 
    The *file* argument must be an object with a ``write(string)`` method; if it
-   is not present or ``None``, :data:`sys.stdout` will be used.  Whether output
-   is buffered is usually determined by *file*, but if the  *flush* keyword
-   argument is true, the stream is forcibly flushed.
+   is not present or ``None``, :data:`sys.stdout` will be used.  Since printed
+   arguments are converted to text strings, :func:`print` cannot be used with
+   binary mode file objects.  For these, use ``file.write(...)`` instead.
+
+   Whether output is buffered is usually determined by *file*, but if the
+   *flush* keyword argument is true, the stream is forcibly flushed.
 
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.
 
 
-.. function:: property(fget=None, fset=None, fdel=None, doc=None)
+.. class:: property(fget=None, fset=None, fdel=None, doc=None)
 
    Return a property attribute.
 
-   *fget* is a function for getting an attribute value, likewise *fset* is a
-   function for setting, and *fdel* a function for del'ing, an attribute.  Typical
-   use is to define a managed attribute ``x``::
+   *fget* is a function for getting an attribute value.  *fset* is a function
+   for setting an attribute value. *fdel* is a function for deleting an attribute
+   value.  And *doc* creates a docstring for the attribute.
+
+   A typical use is to define a managed attribute ``x``::
 
       class C:
           def __init__(self):
@@ -1113,13 +1128,16 @@ are always available.  They are listed here in alphabetical order.
 
           def getx(self):
               return self._x
+
           def setx(self, value):
               self._x = value
+
           def delx(self):
               del self._x
+
           x = property(getx, setx, delx, "I'm the 'x' property.")
 
-   If then *c* is an instance of *C*, ``c.x`` will invoke the getter,
+   If *c* is an instance of *C*, ``c.x`` will invoke the getter,
    ``c.x = value`` will invoke the setter and ``del c.x`` the deleter.
 
    If given, *doc* will be the docstring of the property attribute. Otherwise, the
@@ -1135,8 +1153,9 @@ are always available.  They are listed here in alphabetical order.
               """Get the current voltage."""
               return self._voltage
 
-   turns the :meth:`voltage` method into a "getter" for a read-only attribute
-   with the same name.
+   The ``@property`` decorator turns the :meth:`voltage` method into a "getter"
+   for a read-only attribute with the same name, and it sets the docstring for
+   *voltage* to "Get the current voltage."
 
    A property object has :attr:`~property.getter`, :attr:`~property.setter`,
    and :attr:`~property.deleter` methods usable as decorators that create a
@@ -1164,7 +1183,7 @@ are always available.  They are listed here in alphabetical order.
    additional functions the same name as the original property (``x`` in this
    case.)
 
-   The returned property also has the attributes ``fget``, ``fset``, and
+   The returned property object also has the attributes ``fget``, ``fset``, and
    ``fdel`` corresponding to the constructor arguments.
 
 
@@ -1219,7 +1238,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-set:
-.. function:: set([iterable])
+.. class:: set([iterable])
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
@@ -1240,8 +1259,8 @@ are always available.  They are listed here in alphabetical order.
    ``x.foobar = 123``.
 
 
-.. function:: slice(stop)
-              slice(start, stop[, step])
+.. class:: slice(stop)
+           slice(start, stop[, step])
 
    .. index:: single: Numerical Python
 
@@ -1272,8 +1291,13 @@ are always available.  They are listed here in alphabetical order.
    Use :func:`functools.cmp_to_key` to convert an old-style *cmp* function to a
    *key* function.
 
+   The built-in :func:`sorted` function is guaranteed to be stable. A sort is
+   stable if it guarantees not to change the relative order of elements that
+   compare equal --- this is helpful for sorting in multiple passes (for
+   example, sort by department, then by salary grade).
+
    For sorting examples and a brief sorting tutorial, see `Sorting HowTo
-   <http://wiki.python.org/moin/HowTo/Sorting/>`_\.
+   <https://wiki.python.org/moin/HowTo/Sorting/>`_\.
 
 .. function:: staticmethod(function)
 
@@ -1304,8 +1328,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-str:
-.. function:: str(object='')
-              str(object=b'', encoding='utf-8', errors='strict')
+.. class:: str(object='')
+           str(object=b'', encoding='utf-8', errors='strict')
    :noindex:
 
    Return a :class:`str` version of *object*.  See :func:`str` for details.
@@ -1392,11 +1416,10 @@ are always available.  They are listed here in alphabetical order.
    sequence type, as documented in :ref:`typesseq-tuple` and :ref:`typesseq`.
 
 
-.. function:: type(object)
-              type(name, bases, dict)
+.. class:: type(object)
+           type(name, bases, dict)
 
    .. index:: object: type
-
 
    With one argument, return the type of an *object*.  The return value is a
    type object and generally the same object as returned by

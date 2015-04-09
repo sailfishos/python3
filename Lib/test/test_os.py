@@ -27,6 +27,7 @@ import codecs
 import decimal
 import fractions
 import pickle
+import sysconfig
 try:
     import threading
 except ImportError:
@@ -265,10 +266,13 @@ class StatAttributeTests(unittest.TestCase):
 
     def test_stat_result_pickle(self):
         result = os.stat(self.fname)
-        p = pickle.dumps(result)
-        self.assertIn(b'\x03cos\nstat_result\n', p)
-        unpickled = pickle.loads(p)
-        self.assertEqual(result, unpickled)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            p = pickle.dumps(result, proto)
+            self.assertIn(b'stat_result', p)
+            if proto < 4:
+                self.assertIn(b'cos\nstat_result\n', p)
+            unpickled = pickle.loads(p)
+            self.assertEqual(result, unpickled)
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
@@ -324,10 +328,13 @@ class StatAttributeTests(unittest.TestCase):
             if e.errno == errno.ENOSYS:
                 self.skipTest('os.statvfs() failed with ENOSYS')
 
-        p = pickle.dumps(result)
-        self.assertIn(b'\x03cos\nstatvfs_result\n', p)
-        unpickled = pickle.loads(p)
-        self.assertEqual(result, unpickled)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            p = pickle.dumps(result, proto)
+            self.assertIn(b'statvfs_result', p)
+            if proto < 4:
+                self.assertIn(b'cos\nstatvfs_result\n', p)
+            unpickled = pickle.loads(p)
+            self.assertEqual(result, unpickled)
 
     def test_utime_dir(self):
         delta = 1000000
@@ -901,7 +908,7 @@ class MakedirTests(unittest.TestCase):
         os.makedirs(path, mode)
         self.assertRaises(OSError, os.makedirs, path, mode)
         self.assertRaises(OSError, os.makedirs, path, mode, exist_ok=False)
-        self.assertRaises(OSError, os.makedirs, path, 0o776, exist_ok=True)
+        os.makedirs(path, 0o776, exist_ok=True)
         os.makedirs(path, mode=mode, exist_ok=True)
         os.umask(old_mask)
 
@@ -938,9 +945,8 @@ class MakedirTests(unittest.TestCase):
             os.makedirs(path, mode, exist_ok=True)
             # remove the bit.
             os.chmod(path, stat.S_IMODE(os.lstat(path).st_mode) & ~S_ISGID)
-            with self.assertRaises(OSError):
-                # Should fail when the bit is not already set when demanded.
-                os.makedirs(path, mode | S_ISGID, exist_ok=True)
+            # May work even when the bit is not already set when demanded.
+            os.makedirs(path, mode | S_ISGID, exist_ok=True)
         finally:
             os.umask(old_mask)
 
@@ -1048,6 +1054,12 @@ class URandomTests(unittest.TestCase):
         data2 = self.get_urandom_subprocess(16)
         self.assertNotEqual(data1, data2)
 
+
+HAVE_GETENTROPY = (sysconfig.get_config_var('HAVE_GETENTROPY') == 1)
+
+@unittest.skipIf(HAVE_GETENTROPY,
+                 "getentropy() does not use a file descriptor")
+class URandomFDTests(unittest.TestCase):
     @unittest.skipUnless(resource, "test requires the resource module")
     def test_urandom_failure(self):
         # Check urandom() failing when it is not able to open /dev/random.
@@ -1070,6 +1082,49 @@ class URandomTests(unittest.TestCase):
                 raise AssertionError("OSError not raised")
             """
         assert_python_ok('-c', code)
+
+    def test_urandom_fd_closed(self):
+        # Issue #21207: urandom() should reopen its fd to /dev/urandom if
+        # closed.
+        code = """if 1:
+            import os
+            import sys
+            os.urandom(4)
+            os.closerange(3, 256)
+            sys.stdout.buffer.write(os.urandom(4))
+            """
+        rc, out, err = assert_python_ok('-Sc', code)
+
+    def test_urandom_fd_reopened(self):
+        # Issue #21207: urandom() should detect its fd to /dev/urandom
+        # changed to something else, and reopen it.
+        with open(support.TESTFN, 'wb') as f:
+            f.write(b"x" * 256)
+        self.addCleanup(os.unlink, support.TESTFN)
+        code = """if 1:
+            import os
+            import sys
+            os.urandom(4)
+            for fd in range(3, 256):
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+                else:
+                    # Found the urandom fd (XXX hopefully)
+                    break
+            os.closerange(3, 256)
+            with open({TESTFN!r}, 'rb') as f:
+                os.dup2(f.fileno(), fd)
+                sys.stdout.buffer.write(os.urandom(4))
+                sys.stdout.buffer.write(os.urandom(4))
+            """.format(TESTFN=support.TESTFN)
+        rc, out, err = assert_python_ok('-Sc', code)
+        self.assertEqual(len(out), 8)
+        self.assertNotEqual(out[0:4], out[4:8])
+        rc, out2, err2 = assert_python_ok('-Sc', code)
+        self.assertEqual(len(out2), 8)
+        self.assertNotEqual(out2, out)
 
 
 @contextlib.contextmanager

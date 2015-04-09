@@ -498,9 +498,13 @@ fp_setreadl(struct tok_state *tok, const char* enc)
 
     fd = fileno(tok->fp);
     /* Due to buffering the file offset for fd can be different from the file
-     * position of tok->fp. */
+     * position of tok->fp.  If tok->fp was opened in text mode on Windows,
+     * its file position counts CRLF as one char and can't be directly mapped
+     * to the file offset for fd.  Instead we step back one byte and read to
+     * the end of line.*/
     pos = ftell(tok->fp);
-    if (pos == -1 || lseek(fd, (off_t)pos, SEEK_SET) == (off_t)-1) {
+    if (pos == -1 ||
+        lseek(fd, (off_t)(pos > 0 ? pos - 1 : pos), SEEK_SET) == (off_t)-1) {
         PyErr_SetFromErrnoWithFilename(PyExc_OSError, NULL);
         goto cleanup;
     }
@@ -513,6 +517,12 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     Py_XDECREF(tok->decoding_readline);
     readline = _PyObject_GetAttrId(stream, &PyId_readline);
     tok->decoding_readline = readline;
+    if (pos > 0) {
+        if (PyObject_CallObject(readline, NULL) == NULL) {
+            readline = NULL;
+            goto cleanup;
+        }
+    }
 
   cleanup:
     Py_XDECREF(stream);
@@ -1587,15 +1597,24 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                     } while (isdigit(c));
                 }
                 if (c == 'e' || c == 'E') {
-        exponent:
+                    int e;
+                  exponent:
+                    e = c;
                     /* Exponent part */
                     c = tok_nextc(tok);
-                    if (c == '+' || c == '-')
+                    if (c == '+' || c == '-') {
                         c = tok_nextc(tok);
-                    if (!isdigit(c)) {
-                        tok->done = E_TOKEN;
+                        if (!isdigit(c)) {
+                            tok->done = E_TOKEN;
+                            tok_backup(tok, c);
+                            return ERRORTOKEN;
+                        }
+                    } else if (!isdigit(c)) {
                         tok_backup(tok, c);
-                        return ERRORTOKEN;
+                        tok_backup(tok, e);
+                        *p_start = tok->start;
+                        *p_end = tok->cur;
+                        return NUMBER;
                     }
                     do {
                         c = tok_nextc(tok);

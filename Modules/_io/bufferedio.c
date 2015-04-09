@@ -543,19 +543,8 @@ buffered_close(buffered *self, PyObject *args)
     }
 
     if (exc != NULL) {
-        if (res != NULL) {
-            Py_CLEAR(res);
-            PyErr_Restore(exc, val, tb);
-        }
-        else {
-            PyObject *val2;
-            Py_DECREF(exc);
-            Py_XDECREF(tb);
-            PyErr_Fetch(&exc, &val2, &tb);
-            PyErr_NormalizeException(&exc, &val2, &tb);
-            PyException_SetContext(val2, val);
-            PyErr_Restore(exc, val2, tb);
-        }
+        _PyErr_ChainExceptions(exc, val, tb);
+        Py_CLEAR(res);
     }
 
 end:
@@ -1370,7 +1359,7 @@ buffered_repr(buffered *self)
 
     nameobj = _PyObject_GetAttrId((PyObject *) self, &PyId_name);
     if (nameobj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_AttributeError))
+        if (PyErr_ExceptionMatches(PyExc_Exception))
             PyErr_Clear();
         else
             return NULL;
@@ -2296,6 +2285,8 @@ static void
 bufferedrwpair_dealloc(rwpair *self)
 {
     _PyObject_GC_UNTRACK(self);
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *)self);
     Py_CLEAR(self->reader);
     Py_CLEAR(self->writer);
     Py_CLEAR(self->dict);
@@ -2305,9 +2296,14 @@ bufferedrwpair_dealloc(rwpair *self)
 static PyObject *
 _forward_call(buffered *self, _Py_Identifier *name, PyObject *args)
 {
-    PyObject *func = _PyObject_GetAttrId((PyObject *)self, name);
-    PyObject *ret;
+    PyObject *func, *ret;
+    if (self == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "I/O operation on uninitialized object");
+        return NULL;
+    }
 
+    func = _PyObject_GetAttrId((PyObject *)self, name);
     if (func == NULL) {
         PyErr_SetString(PyExc_AttributeError, name->string);
         return NULL;

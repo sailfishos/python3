@@ -182,8 +182,9 @@ class TestPartialC(TestPartial, unittest.TestCase):
     def test_pickle(self):
         f = self.partial(signature, 'asdf', bar=True)
         f.add_something_to__dict__ = True
-        f_copy = pickle.loads(pickle.dumps(f))
-        self.assertEqual(signature(f), signature(f_copy))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f_copy = pickle.loads(pickle.dumps(f, proto))
+            self.assertEqual(signature(f), signature(f_copy))
 
     # Issue 6083: Reference counting bug
     def test_setstate_refcount(self):
@@ -1069,6 +1070,13 @@ class TestLRU(unittest.TestCase):
         test_func(DoubleEq(2))                      # Load the cache
         self.assertEqual(test_func(DoubleEq(2)),    # Trigger a re-entrant __eq__ call
                          DoubleEq(2))               # Verify the correct return value
+
+    def test_early_detection_of_bad_call(self):
+        # Issue #22184
+        with self.assertRaises(TypeError):
+            @functools.lru_cache
+            def f():
+                pass
 
 
 class TestSingleDispatch(unittest.TestCase):

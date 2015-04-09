@@ -80,13 +80,13 @@ from email.header import decode_header as _email_decode_header
 from socket import _GLOBAL_DEFAULT_TIMEOUT
 
 __all__ = ["NNTP",
-           "NNTPReplyError", "NNTPTemporaryError", "NNTPPermanentError",
-           "NNTPProtocolError", "NNTPDataError",
+           "NNTPError", "NNTPReplyError", "NNTPTemporaryError",
+           "NNTPPermanentError", "NNTPProtocolError", "NNTPDataError",
            "decode_header",
            ]
 
 # maximal line length when calling readline(). This is to prevent
-# reading arbitrary lenght lines. RFC 3977 limits NNTP line length to
+# reading arbitrary length lines. RFC 3977 limits NNTP line length to
 # 512 characters, including CRLF. We have selected 2048 just to be on
 # the safe side.
 _MAXLINE = 2048
@@ -289,8 +289,7 @@ if _have_ssl:
         # Generate a default SSL context if none was passed.
         if context is None:
             context = ssl._create_stdlib_context()
-        server_hostname = hostname if ssl.HAS_SNI else None
-        return context.wrap_socket(sock, server_hostname=server_hostname)
+        return context.wrap_socket(sock, server_hostname=hostname)
 
 
 # The classes themselves
@@ -1085,7 +1084,6 @@ if _have_ssl:
 # Test retrieval when run as a script.
 if __name__ == '__main__':
     import argparse
-    from email.utils import parsedate
 
     parser = argparse.ArgumentParser(description="""\
         nntplib built-in demo - display the latest articles in a newsgroup""")

@@ -13,6 +13,8 @@
 
    ------------------------------------------------------------------------ */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "ucnhash.h"
 #include "structmember.h"
@@ -974,7 +976,7 @@ is_unified_ideograph(Py_UCS4 code)
         (0x2B740 <= code && code <= 0x2B81D);   /* CJK Ideograph Extension D */
 }
 
-/* macros used to determine if the given codepoint is in the PUA range that
+/* macros used to determine if the given code point is in the PUA range that
  * we are using to store aliases and named sequences */
 #define IS_ALIAS(cp) ((cp >= aliases_start) && (cp < aliases_end))
 #define IS_NAMED_SEQ(cp) ((cp >= named_sequences_start) && \
@@ -984,7 +986,7 @@ static int
 _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
            int with_alias_and_seq)
 {
-    /* Find the name associated with the given codepoint.
+    /* Find the name associated with the given code point.
      * If with_alias_and_seq is 1, check for names in the Private Use Area 15
      * that we are using for aliases and named sequences. */
     int offset;
@@ -995,7 +997,7 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
     if (code >= 0x110000)
         return 0;
 
-    /* XXX should we just skip all the codepoints in the PUAs here? */
+    /* XXX should we just skip all the code points in the PUAs here? */
     if (!with_alias_and_seq && (IS_ALIAS(code) || IS_NAMED_SEQ(code)))
         return 0;
 
@@ -1123,8 +1125,8 @@ _check_alias_and_seq(unsigned int cp, Py_UCS4* code, int with_named_seq)
     /* check if named sequences are allowed */
     if (!with_named_seq && IS_NAMED_SEQ(cp))
         return 0;
-    /* if the codepoint is in the PUA range that we use for aliases,
-     * convert it to obtain the right codepoint */
+    /* if the code point is in the PUA range that we use for aliases,
+     * convert it to obtain the right code point */
     if (IS_ALIAS(cp))
         *code = name_aliases[cp-aliases_start];
     else
@@ -1136,9 +1138,9 @@ static int
 _getcode(PyObject* self, const char* name, int namelen, Py_UCS4* code,
          int with_named_seq)
 {
-    /* Return the codepoint associated with the given name.
+    /* Return the code point associated with the given name.
      * Named aliases are resolved too (unless self != NULL (i.e. we are using
-     * 3.2.0)).  If with_named_seq is 1, returns the PUA codepoint that we are
+     * 3.2.0)).  If with_named_seq is 1, returns the PUA code point that we are
      * using for the named sequence, and the caller must then convert it. */
     unsigned int h, v;
     unsigned int mask = code_size-1;
@@ -1271,12 +1273,16 @@ unicodedata_lookup(PyObject* self, PyObject* args)
     Py_UCS4 code;
 
     char* name;
-    int namelen;
+    Py_ssize_t namelen;
     unsigned int index;
     if (!PyArg_ParseTuple(args, "s#:lookup", &name, &namelen))
         return NULL;
+    if (namelen > INT_MAX) {
+        PyErr_SetString(PyExc_KeyError, "name too long");
+        return NULL;
+    }
 
-    if (!_getcode(self, name, namelen, &code, 1)) {
+    if (!_getcode(self, name, (int)namelen, &code, 1)) {
         PyErr_Format(PyExc_KeyError, "undefined character name '%s'", name);
         return NULL;
     }

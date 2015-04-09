@@ -22,13 +22,15 @@ def tester(fn, wantResult):
     fn = fn.replace('["', '[b"')
     fn = fn.replace(", '", ", b'")
     fn = fn.replace(', "', ', b"')
+    fn = os.fsencode(fn).decode('latin1')
+    fn = fn.encode('ascii', 'backslashreplace').decode('ascii')
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         gotResult = eval(fn)
     if isinstance(wantResult, str):
-        wantResult = wantResult.encode('ascii')
+        wantResult = os.fsencode(wantResult)
     elif isinstance(wantResult, tuple):
-        wantResult = tuple(r.encode('ascii') for r in wantResult)
+        wantResult = tuple(os.fsencode(r) for r in wantResult)
 
     gotResult = eval(fn)
     if wantResult != gotResult:
@@ -223,7 +225,6 @@ class TestNtpath(unittest.TestCase):
             tester('ntpath.expandvars("$[foo]bar")', "$[foo]bar")
             tester('ntpath.expandvars("$bar bar")', "$bar bar")
             tester('ntpath.expandvars("$?bar")', "$?bar")
-            tester('ntpath.expandvars("${foo}bar")', "barbar")
             tester('ntpath.expandvars("$foo}bar")', "bar}bar")
             tester('ntpath.expandvars("${foo")', "${foo")
             tester('ntpath.expandvars("${{foo}}")', "baz1}")
@@ -236,6 +237,61 @@ class TestNtpath(unittest.TestCase):
             tester('ntpath.expandvars("%?bar%")', "%?bar%")
             tester('ntpath.expandvars("%foo%%bar")', "bar%bar")
             tester('ntpath.expandvars("\'%foo%\'%bar")', "\'%foo%\'%bar")
+
+    @unittest.skipUnless(support.FS_NONASCII, 'need support.FS_NONASCII')
+    def test_expandvars_nonascii(self):
+        def check(value, expected):
+            tester('ntpath.expandvars(%r)' % value, expected)
+        with support.EnvironmentVarGuard() as env:
+            env.clear()
+            nonascii = support.FS_NONASCII
+            env['spam'] = nonascii
+            env[nonascii] = 'ham' + nonascii
+            check('$spam bar', '%s bar' % nonascii)
+            check('$%s bar' % nonascii, '$%s bar' % nonascii)
+            check('${spam}bar', '%sbar' % nonascii)
+            check('${%s}bar' % nonascii, 'ham%sbar' % nonascii)
+            check('$spam}bar', '%s}bar' % nonascii)
+            check('$%s}bar' % nonascii, '$%s}bar' % nonascii)
+            check('%spam% bar', '%s bar' % nonascii)
+            check('%{}% bar'.format(nonascii), 'ham%s bar' % nonascii)
+            check('%spam%bar', '%sbar' % nonascii)
+            check('%{}%bar'.format(nonascii), 'ham%sbar' % nonascii)
+
+    def test_expanduser(self):
+        tester('ntpath.expanduser("test")', 'test')
+
+        with support.EnvironmentVarGuard() as env:
+            env.clear()
+            tester('ntpath.expanduser("~test")', '~test')
+
+            env['HOMEPATH'] = 'eric\\idle'
+            env['HOMEDRIVE'] = 'C:\\'
+            tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
+            tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
+
+            del env['HOMEDRIVE']
+            tester('ntpath.expanduser("~test")', 'eric\\test')
+            tester('ntpath.expanduser("~")', 'eric\\idle')
+
+            env.clear()
+            env['USERPROFILE'] = 'C:\\eric\\idle'
+            tester('ntpath.expanduser("~test")', 'C:\\eric\\test')
+            tester('ntpath.expanduser("~")', 'C:\\eric\\idle')
+
+            env.clear()
+            env['HOME'] = 'C:\\idle\\eric'
+            tester('ntpath.expanduser("~test")', 'C:\\idle\\test')
+            tester('ntpath.expanduser("~")', 'C:\\idle\\eric')
+
+            tester('ntpath.expanduser("~test\\foo\\bar")',
+                   'C:\\idle\\test\\foo\\bar')
+            tester('ntpath.expanduser("~test/foo/bar")',
+                   'C:\\idle\\test/foo/bar')
+            tester('ntpath.expanduser("~\\foo\\bar")',
+                   'C:\\idle\\eric\\foo\\bar')
+            tester('ntpath.expanduser("~/foo/bar")',
+                   'C:\\idle\\eric/foo/bar')
 
     def test_abspath(self):
         # ntpath.abspath() can only be used on a system with the "nt" module
@@ -250,13 +306,14 @@ class TestNtpath(unittest.TestCase):
             self.skipTest('nt module not available')
 
     def test_relpath(self):
-        currentdir = os.path.split(os.getcwd())[-1]
         tester('ntpath.relpath("a")', 'a')
         tester('ntpath.relpath(os.path.abspath("a"))', 'a')
         tester('ntpath.relpath("a/b")', 'a\\b')
         tester('ntpath.relpath("../a/b")', '..\\a\\b')
-        tester('ntpath.relpath("a", "../b")', '..\\'+currentdir+'\\a')
-        tester('ntpath.relpath("a/b", "../c")', '..\\'+currentdir+'\\a\\b')
+        with support.temp_cwd(support.TESTFN) as cwd_dir:
+            currentdir = os.path.basename(cwd_dir)
+            tester('ntpath.relpath("a", "../b")', '..\\'+currentdir+'\\a')
+            tester('ntpath.relpath("a/b", "../c")', '..\\'+currentdir+'\\a\\b')
         tester('ntpath.relpath("a", "b/c")', '..\\..\\a')
         tester('ntpath.relpath("c:/foo/bar/bat", "c:/x/y")', '..\\..\\foo\\bar\\bat')
         tester('ntpath.relpath("//conky/mountpoint/a", "//conky/mountpoint/b/c")', '..\\..\\a')

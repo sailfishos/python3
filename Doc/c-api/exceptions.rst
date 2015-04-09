@@ -64,7 +64,7 @@ in various ways.  There is a separate error indicator for each thread.
       Do not compare the return value to a specific exception; use
       :c:func:`PyErr_ExceptionMatches` instead, shown below.  (The comparison could
       easily fail since the exception may be an instance instead of a class, in the
-      case of a class exception, or it may the a subclass of the expected exception.)
+      case of a class exception, or it may be a subclass of the expected exception.)
 
 
 .. c:function:: int PyErr_ExceptionMatches(PyObject *exc)
@@ -236,8 +236,8 @@ in various ways.  There is a separate error indicator for each thread.
 
    Similar to :c:func:`PyErr_SetFromErrno`, with the additional behavior that if
    *filenameObject* is not *NULL*, it is passed to the constructor of *type* as
-   a third parameter.  In the case of exceptions such as :exc:`IOError` and
-   :exc:`OSError`, this is used to define the :attr:`filename` attribute of the
+   a third parameter.  In the case of :exc:`OSError` exception,
+   this is used to define the :attr:`filename` attribute of the
    exception instance.
 
 
@@ -247,7 +247,7 @@ in various ways.  There is a separate error indicator for each thread.
    filename object, for raising errors when a function that takes two filenames
    fails.
 
-.. versionadded:: 3.4
+   .. versionadded:: 3.4
 
 
 .. c:function:: PyObject* PyErr_SetFromErrnoWithFilename(PyObject *type, const char *filename)
@@ -295,7 +295,7 @@ in various ways.  There is a separate error indicator for each thread.
    but accepts a second filename object.
    Availability: Windows.
 
-.. versionadded:: 3.4
+   .. versionadded:: 3.4
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilename(PyObject *type, int ierr, const char *filename)
@@ -321,7 +321,7 @@ in various ways.  There is a separate error indicator for each thread.
    attributes, which make the exception printing subsystem think the exception
    is a :exc:`SyntaxError`.
 
-.. versionadded:: 3.4
+   .. versionadded:: 3.4
 
 
 .. c:function:: void PyErr_SyntaxLocationEx(char *filename, int lineno, int col_offset)
@@ -329,7 +329,7 @@ in various ways.  There is a separate error indicator for each thread.
    Like :c:func:`PyErr_SyntaxLocationObject`, but *filename* is a byte string
    decoded from the filesystem encoding (:func:`os.fsdecode`).
 
-.. versionadded:: 3.2
+   .. versionadded:: 3.2
 
 
 .. c:function:: void PyErr_SyntaxLocation(char *filename, int lineno)
@@ -346,7 +346,7 @@ in various ways.  There is a separate error indicator for each thread.
    use.
 
 
-.. c:function:: int PyErr_WarnEx(PyObject *category, char *message, int stack_level)
+.. c:function:: int PyErr_WarnEx(PyObject *category, const char *message, Py_ssize_t stack_level)
 
    Issue a warning message.  The *category* argument is a warning category (see
    below) or *NULL*; the *message* argument is an UTF-8 encoded string.  *stack_level* is a

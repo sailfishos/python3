@@ -220,8 +220,11 @@ decode_ascii_surrogateescape(const char *arg, size_t *size)
     wchar_t *res;
     unsigned char *in;
     wchar_t *out;
+    size_t argsize = strlen(arg) + 1;
 
-    res = PyMem_RawMalloc((strlen(arg)+1)*sizeof(wchar_t));
+    if (argsize > PY_SSIZE_T_MAX/sizeof(wchar_t))
+        return NULL;
+    res = PyMem_RawMalloc(argsize*sizeof(wchar_t));
     if (!res)
         return NULL;
 
@@ -303,10 +306,15 @@ _Py_char2wchar(const char* arg, size_t *size)
     argsize = mbstowcs(NULL, arg, 0);
 #endif
     if (argsize != (size_t)-1) {
-        res = (wchar_t *)PyMem_RawMalloc((argsize+1)*sizeof(wchar_t));
+        if (argsize == PY_SSIZE_T_MAX)
+            goto oom;
+        argsize += 1;
+        if (argsize > PY_SSIZE_T_MAX/sizeof(wchar_t))
+            goto oom;
+        res = (wchar_t *)PyMem_RawMalloc(argsize*sizeof(wchar_t));
         if (!res)
             goto oom;
-        count = mbstowcs(res, arg, argsize+1);
+        count = mbstowcs(res, arg, argsize);
         if (count != (size_t)-1) {
             wchar_t *tmp;
             /* Only use the result if it contains no
@@ -329,6 +337,8 @@ _Py_char2wchar(const char* arg, size_t *size)
     /* Overallocate; as multi-byte characters are in the argument, the
        actual output could use less memory. */
     argsize = strlen(arg) + 1;
+    if (argsize > PY_SSIZE_T_MAX/sizeof(wchar_t))
+        goto oom;
     res = (wchar_t*)PyMem_RawMalloc(argsize*sizeof(wchar_t));
     if (!res)
         goto oom;
@@ -622,10 +632,12 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 #ifdef MS_WINDOWS
     HANDLE handle;
     DWORD flags;
-#elif defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
+#else
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
+    static int ioctl_works = -1;
     int request;
     int err;
-#elif defined(HAVE_FCNTL_H)
+#endif
     int flags;
     int res;
 #endif
@@ -671,20 +683,38 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     }
     return 0;
 
-#elif defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
-    if (inheritable)
-        request = FIONCLEX;
-    else
-        request = FIOCLEX;
-    err = ioctl(fd, request, NULL);
-    if (err) {
-        if (raise)
-            PyErr_SetFromErrno(PyExc_OSError);
-        return -1;
-    }
-    return 0;
-
 #else
+
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIOCLEX) && defined(FIONCLEX)
+    if (ioctl_works != 0) {
+        /* fast-path: ioctl() only requires one syscall */
+        if (inheritable)
+            request = FIONCLEX;
+        else
+            request = FIOCLEX;
+        err = ioctl(fd, request, NULL);
+        if (!err) {
+            ioctl_works = 1;
+            return 0;
+        }
+
+        if (errno != ENOTTY) {
+            if (raise)
+                PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+        else {
+            /* Issue #22258: Here, ENOTTY means "Inappropriate ioctl for
+               device". The ioctl is declared but not supported by the kernel.
+               Remember that ioctl() doesn't work. It is the case on
+               Illumos-based OS for example. */
+            ioctl_works = 0;
+        }
+        /* fallback to fcntl() if ioctl() does not work */
+    }
+#endif
+
+    /* slow-path: fcntl() requires two syscalls */
     flags = fcntl(fd, F_GETFD);
     if (flags < 0) {
         if (raise)

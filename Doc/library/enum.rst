@@ -404,7 +404,7 @@ enumerations; the others auto-assign increasing integers starting with 1.  A
 new class derived from :class:`Enum` is returned.  In other words, the above
 assignment to :class:`Animal` is equivalent to::
 
-    >>> class Animals(Enum):
+    >>> class Animal(Enum):
     ...     ant = 1
     ...     bee = 2
     ...     cat = 3
@@ -421,7 +421,7 @@ enumeration is being created in (e.g. it will fail if you use a utility
 function in separate module, and also may not work on IronPython or Jython).
 The solution is to specify the module name explicitly as follows::
 
-    >>> Animals = Enum('Animals', 'ant bee cat dog', module=__name__)
+    >>> Animal = Enum('Animal', 'ant bee cat dog', module=__name__)
 
 .. warning::
 
@@ -434,7 +434,7 @@ The new pickle protocol 4 also, in some circumstances, relies on
 to find the class.  For example, if the class was made available in class
 SomeData in the global scope::
 
-    >>> Animals = Enum('Animals', 'ant bee cat dog', qualname='SomeData.Animals')
+    >>> Animal = Enum('Animal', 'ant bee cat dog', qualname='SomeData.Animal')
 
 The complete signature is::
 
@@ -442,10 +442,14 @@ The complete signature is::
 
 :value: What the new Enum class will record as its name.
 
-:names: The Enum members.  This can be a whitespace or comma seperated string
+:names: The Enum members.  This can be a whitespace or comma separated string
   (values will start at 1)::
 
     'red green blue' | 'red,green,blue' | 'red, green, blue'
+
+  or an iterator of names::
+
+    ['red', 'green', 'blue']
 
   or an iterator of (name, value) pairs::
 
@@ -453,7 +457,7 @@ The complete signature is::
 
   or a mapping::
 
-    {'chartruese': 7, 'sea_green': 11, 'rosemary': 42}
+    {'chartreuse': 7, 'sea_green': 11, 'rosemary': 42}
 
 :module: name of module where new Enum class can be found.
 
@@ -543,7 +547,7 @@ Some rules:
    add methods and don't specify another data type such as :class:`int` or
    :class:`str`.
 3. When another data type is mixed in, the :attr:`value` attribute is *not the
-   same* as the enum member itself, although it is equivalant and will compare
+   same* as the enum member itself, although it is equivalent and will compare
    equal.
 4. %-style formatting:  `%s` and `%r` call :class:`Enum`'s :meth:`__str__` and
    :meth:`__repr__` respectively; other codes (such as `%i` or `%h` for
@@ -586,8 +590,7 @@ Avoids having to specify the value for each enumeration member::
 
     The :meth:`__new__` method, if defined, is used during creation of the Enum
     members; it is then replaced by Enum's :meth:`__new__` which is used after
-    class creation for lookup of existing members.  Due to the way Enums are
-    supposed to behave, there is no way to customize Enum's :meth:`__new__`.
+    class creation for lookup of existing members.
 
 
 OrderedEnum
@@ -743,7 +746,11 @@ but not of the class::
     >>> dir(Planet.EARTH)
     ['__class__', '__doc__', '__module__', 'name', 'surface_gravity', 'value']
 
-A :meth:`__new__` method will only be used for the creation of the
-:class:`Enum` members -- after that it is replaced.  This means if you wish to
-change how :class:`Enum` members are looked up you either have to write a
-helper function or a :func:`classmethod`.
+The :meth:`__new__` method will only be used for the creation of the
+:class:`Enum` members -- after that it is replaced.  Any custom :meth:`__new__`
+method must create the object and set the :attr:`_value_` attribute
+appropriately.
+
+If you wish to change how :class:`Enum` members are looked up you should either
+write a helper function or a :func:`classmethod` for the :class:`Enum`
+subclass.

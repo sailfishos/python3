@@ -4,6 +4,29 @@
 Synchronization primitives
 ==========================
 
+Locks:
+
+* :class:`Lock`
+* :class:`Event`
+* :class:`Condition`
+* :class:`Semaphore`
+* :class:`BoundedSemaphore`
+
+Queues:
+
+* :class:`Queue`
+* :class:`PriorityQueue`
+* :class:`LifoQueue`
+* :class:`JoinableQueue`
+
+asyncio locks and queues API were designed to be close to classes of the
+:mod:`threading` module (:class:`~threading.Lock`, :class:`~threading.Event`,
+:class:`~threading.Condition`, :class:`~threading.Semaphore`,
+:class:`~threading.BoundedSemaphore`) and the :mod:`queue` module
+(:class:`~queue.Queue`, :class:`~queue.PriorityQueue`,
+:class:`~queue.LifoQueue`), but they have no *timeout* parameter. The
+:func:`asyncio.wait_for` function can be used to cancel a task after a timeout.
+
 Locks
 -----
 
@@ -34,7 +57,7 @@ Lock
 
    :meth:`acquire` is a coroutine and should be called with ``yield from``.
 
-   Locks also support the context manager protocol.  ``(yield from lock)``
+   Locks also support the context management protocol.  ``(yield from lock)``
    should be used as context manager expression.
 
    Usage::
@@ -130,7 +153,7 @@ Event
 Condition
 ^^^^^^^^^
 
-.. class:: Condition(\*, loop=None)
+.. class:: Condition(lock=None, \*, loop=None)
 
    A Condition implementation, asynchronous equivalent to
    :class:`threading.Condition`.
@@ -139,7 +162,9 @@ Condition
    allows one or more coroutines to wait until they are notified by another
    coroutine.
 
-   A new :class:`Lock` object is created and used as the underlying lock.
+   If the *lock* argument is given and not ``None``, it must be a :class:`Lock`
+   object, and it is used as the underlying lock.  Otherwise,
+   a new :class:`Lock` object is created and used as the underlying lock.
 
    .. method:: acquire()
 
@@ -227,7 +252,7 @@ Semaphore
    counter can never go below zero; when :meth:`acquire` finds that it is zero,
    it blocks, waiting until some other thread calls :meth:`release`.
 
-   Semaphores also support the context manager protocol.
+   Semaphores also support the context management protocol.
 
    The optional argument gives the initial value for the internal counter; it
    defaults to ``1``. If the value given is less than ``0``, :exc:`ValueError`
@@ -291,7 +316,7 @@ Queue
 
    .. method:: full()
 
-      Return ``True`` if there are maxsize items in the queue.
+      Return ``True`` if there are :attr:`maxsize` items in the queue.
 
       .. note::
 
@@ -300,11 +325,14 @@ Queue
 
    .. method:: get()
 
-      Remove and return an item from the queue.
-
-      If you yield from :meth:`get()`, wait until a item is available.
+      Remove and return an item from the queue. If queue is empty, wait until
+      an item is available.
 
       This method is a :ref:`coroutine <coroutine>`.
+
+      .. seealso::
+
+         The :meth:`empty` method.
 
    .. method:: get_nowait()
 
@@ -315,12 +343,14 @@ Queue
 
    .. method:: put(item)
 
-      Put an item into the queue.
-
-      If you yield from ``put()``, wait until a free slot is available before
-      adding item.
+      Put an item into the queue. If the queue is full, wait until a free slot
+      is available before adding item.
 
       This method is a :ref:`coroutine <coroutine>`.
+
+      .. seealso::
+
+         The :meth:`full` method.
 
    .. method:: put_nowait(item)
 
@@ -398,13 +428,11 @@ Exceptions
 
 .. exception:: QueueEmpty
 
-   Exception raised when non-blocking :meth:`~Queue.get` (or
-   :meth:`~Queue.get_nowait`) is called
-   on a :class:`Queue` object which is empty.
+   Exception raised when the :meth:`~Queue.get_nowait` method is called on a
+   :class:`Queue` object which is empty.
 
 
 .. exception:: QueueFull
 
-   Exception raised when non-blocking :meth:`~Queue.put` (or
-   :meth:`~Queue.put_nowait`) is called
-   on a :class:`Queue` object which is full.
+   Exception raised when the :meth:`~Queue.put_nowait` method is called on a
+   :class:`Queue` object which is full.

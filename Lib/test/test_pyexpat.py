@@ -2,7 +2,10 @@
 # handler, are obscure and unhelpful.
 
 from io import BytesIO
+import os
+import sysconfig
 import unittest
+import traceback
 
 from xml.parsers import expat
 from xml.parsers.expat import errors
@@ -236,6 +239,18 @@ class ParseTest(unittest.TestCase):
         operations = out.out
         self._verify_parse_output(operations)
 
+    def test_parse_again(self):
+        parser = expat.ParserCreate()
+        file = BytesIO(data)
+        parser.ParseFile(file)
+        # Issue 6676: ensure a meaningful exception is raised when attempting
+        # to parse more than one XML document per xmlparser instance,
+        # a limitation of the Expat library.
+        with self.assertRaises(expat.error) as cm:
+            parser.ParseFile(file)
+        self.assertEqual(expat.ErrorString(cm.exception.code),
+                          expat.errors.XML_ERROR_FINISHED)
+
 class NamespaceSeparatorTest(unittest.TestCase):
     def test_legal(self):
         # Tests that make sure we get errors when the namespace_separator value
@@ -407,7 +422,11 @@ class HandlerExceptionTest(unittest.TestCase):
     def StartElementHandler(self, name, attrs):
         raise RuntimeError(name)
 
-    def test(self):
+    def check_traceback_entry(self, entry, filename, funcname):
+        self.assertEqual(os.path.basename(entry[0]), filename)
+        self.assertEqual(entry[2], funcname)
+
+    def test_exception(self):
         parser = expat.ParserCreate()
         parser.StartElementHandler = self.StartElementHandler
         try:
@@ -417,6 +436,17 @@ class HandlerExceptionTest(unittest.TestCase):
             self.assertEqual(e.args[0], 'a',
                              "Expected RuntimeError for element 'a', but" + \
                              " found %r" % e.args[0])
+            # Check that the traceback contains the relevant line in pyexpat.c
+            entries = traceback.extract_tb(e.__traceback__)
+            self.assertEqual(len(entries), 3)
+            self.check_traceback_entry(entries[0],
+                                       "test_pyexpat.py", "test_exception")
+            self.check_traceback_entry(entries[1],
+                                       "pyexpat.c", "StartElement")
+            self.check_traceback_entry(entries[2],
+                                       "test_pyexpat.py", "StartElementHandler")
+            if sysconfig.is_python_build():
+                self.assertIn('call_with_frame("StartElement"', entries[1][3])
 
 
 # Test Current* members:

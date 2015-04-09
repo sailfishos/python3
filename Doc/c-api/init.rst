@@ -236,12 +236,17 @@ Process-wide parameters
    :c:func:`Py_Initialize`, then :c:func:`Py_GetPath` won't attempt to compute a
    default search path but uses the one provided instead.  This is useful if
    Python is embedded by an application that has full knowledge of the location
-   of all modules.  The path components should be separated by semicolons.
+   of all modules.  The path components should be separated by the platform
+   dependent delimiter character, which is ``':'`` on Unix and Mac OS X, ``';'``
+   on Windows.
 
    This also causes :data:`sys.executable` to be set only to the raw program
    name (see :c:func:`Py_SetProgramName`) and for :data:`sys.prefix` and
    :data:`sys.exec_prefix` to be empty.  It is up to the caller to modify these
    if required after calling :c:func:`Py_Initialize`.
+
+   The path argument is copied internally, so the caller may free it after the
+   call completes.
 
 
 .. c:function:: const char* Py_GetVersion()
@@ -1177,7 +1182,7 @@ These functions are only intended to be used by advanced debugging tools.
 
 .. c:function:: PyThreadState * PyInterpreterState_ThreadHead(PyInterpreterState *interp)
 
-   Return the a pointer to the first :c:type:`PyThreadState` object in the list of
+   Return the pointer to the first :c:type:`PyThreadState` object in the list of
    threads associated with the interpreter *interp*.
 
 
