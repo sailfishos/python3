@@ -873,18 +873,18 @@ math_2(PyObject *args, double (*func) (double, double), char *funcname)
 FUNC1(acos, acos, 0,
       "acos(x)\n\nReturn the arc cosine (measured in radians) of x.")
 FUNC1(acosh, m_acosh, 0,
-      "acosh(x)\n\nReturn the hyperbolic arc cosine (measured in radians) of x.")
+      "acosh(x)\n\nReturn the inverse hyperbolic cosine of x.")
 FUNC1(asin, asin, 0,
       "asin(x)\n\nReturn the arc sine (measured in radians) of x.")
 FUNC1(asinh, m_asinh, 0,
-      "asinh(x)\n\nReturn the hyperbolic arc sine (measured in radians) of x.")
+      "asinh(x)\n\nReturn the inverse hyperbolic sine of x.")
 FUNC1(atan, atan, 0,
       "atan(x)\n\nReturn the arc tangent (measured in radians) of x.")
 FUNC2(atan2, m_atan2,
       "atan2(y, x)\n\nReturn the arc tangent (measured in radians) of y/x.\n"
       "Unlike atan(y/x), the signs of both x and y are considered.")
 FUNC1(atanh, m_atanh, 0,
-      "atanh(x)\n\nReturn the hyperbolic arc tangent (measured in radians) of x.")
+      "atanh(x)\n\nReturn the inverse hyperbolic tangent of x.")
 
 static PyObject * math_ceil(PyObject *self, PyObject *number) {
     _Py_IDENTIFIER(__ceil__);
@@ -906,7 +906,9 @@ PyDoc_STRVAR(math_ceil_doc,
              "This is the smallest integral value >= x.");
 
 FUNC2(copysign, copysign,
-      "copysign(x, y)\n\nReturn x with the sign of y.")
+      "copysign(x, y)\n\nReturn a float with the magnitude (absolute value) "
+      "of x but the sign \nof y. On platforms that support signed zeros, "
+      "copysign(1.0, -0.0) \nreturns -1.0.\n")
 FUNC1(cos, cos, 0,
       "cos(x)\n\nReturn the cosine of x (measured in radians).")
 FUNC1(cosh, cosh, 1,

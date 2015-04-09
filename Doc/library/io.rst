@@ -289,7 +289,7 @@ I/O Base Classes
       most *size* bytes will be read.
 
       The line terminator is always ``b'\n'`` for binary files; for text files,
-      the *newlines* argument to :func:`open` can be used to select the line
+      the *newline* argument to :func:`open` can be used to select the line
       terminator(s) recognized.
 
    .. method:: readlines(hint=-1)
@@ -352,6 +352,12 @@ I/O Base Classes
       Write a list of lines to the stream.  Line separators are not added, so it
       is usual for each of the lines provided to have a line separator at the
       end.
+
+   .. method:: __del__()
+
+      Prepare for object destruction. :class:`IOBase` provides a default
+      implementation of this method that calls the instance's
+      :meth:`~IOBase.close` method.
 
 
 .. class:: RawIOBase
@@ -557,7 +563,8 @@ than raw I/O does.
 .. class:: BytesIO([initial_bytes])
 
    A stream implementation using an in-memory bytes buffer.  It inherits
-   :class:`BufferedIOBase`.
+   :class:`BufferedIOBase`.  The buffer is discarded when the
+   :meth:`~IOBase.close` method is called.
 
    The argument *initial_bytes* contains optional initial :class:`bytes` data.
 
@@ -578,13 +585,14 @@ than raw I/O does.
 
       .. note::
          As long as the view exists, the :class:`BytesIO` object cannot be
-         resized.
+         resized or closed.
 
       .. versionadded:: 3.2
 
    .. method:: getvalue()
 
       Return :class:`bytes` containing the entire contents of the buffer.
+
 
    .. method:: read1()
 
@@ -852,7 +860,8 @@ Text I/O
 
 .. class:: StringIO(initial_value='', newline='\\n')
 
-   An in-memory stream for text I/O.
+   An in-memory stream for text I/O.  The text buffer is discarded when the
+   :meth:`~IOBase.close` method is called.
 
    The initial value of the buffer (an empty string by default) can be set by
    providing *initial_value*.  The *newline* argument works like that of
@@ -864,9 +873,7 @@ Text I/O
 
    .. method:: getvalue()
 
-      Return a ``str`` containing the entire contents of the buffer at any
-      time before the :class:`StringIO` object's :meth:`close` method is
-      called.
+      Return a ``str`` containing the entire contents of the buffer.
 
    Example usage::
 

@@ -85,8 +85,6 @@ __version__ = "0.6"
 __all__ = ["HTTPServer", "BaseHTTPRequestHandler"]
 
 import html
-import email.message
-import email.parser
 import http.client
 import io
 import mimetypes
@@ -703,10 +701,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         path = self.translate_path(self.path)
         f = None
         if os.path.isdir(path):
-            if not self.path.endswith('/'):
+            parts = urllib.parse.urlsplit(self.path)
+            if not parts.path.endswith('/'):
                 # redirect browser - doing basically what apache does
                 self.send_response(301)
-                self.send_header("Location", self.path + "/")
+                new_parts = (parts[0], parts[1], parts[2] + '/',
+                             parts[3], parts[4])
+                new_url = urllib.parse.urlunsplit(new_parts)
+                self.send_header("Location", new_url)
                 self.end_headers()
                 return None
             for index in "index.html", "index.htm":
@@ -749,7 +751,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             return None
         list.sort(key=lambda a: a.lower())
         r = []
-        displaypath = html.escape(urllib.parse.unquote(self.path))
+        try:
+            displaypath = urllib.parse.unquote(self.path,
+                                               errors='surrogatepass')
+        except UnicodeDecodeError:
+            displaypath = urllib.parse.unquote(path)
+        displaypath = html.escape(displaypath)
         enc = sys.getfilesystemencoding()
         title = 'Directory listing for %s' % displaypath
         r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
@@ -771,9 +778,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 displayname = name + "@"
                 # Note: a link to a directory displays with @ and links with /
             r.append('<li><a href="%s">%s</a></li>'
-                    % (urllib.parse.quote(linkname), html.escape(displayname)))
+                    % (urllib.parse.quote(linkname,
+                                          errors='surrogatepass'),
+                       html.escape(displayname)))
         r.append('</ul>\n<hr>\n</body>\n</html>\n')
-        encoded = '\n'.join(r).encode(enc)
+        encoded = '\n'.join(r).encode(enc, 'surrogateescape')
         f = io.BytesIO()
         f.write(encoded)
         f.seek(0)
@@ -796,7 +805,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         path = path.split('#',1)[0]
         # Don't forget explicit trailing slash when normalizing. Issue17324
         trailing_slash = path.rstrip().endswith('/')
-        path = posixpath.normpath(urllib.parse.unquote(path))
+        try:
+            path = urllib.parse.unquote(path, errors='surrogatepass')
+        except UnicodeDecodeError:
+            path = urllib.parse.unquote(path)
+        path = posixpath.normpath(path)
         words = path.split('/')
         words = filter(None, words)
         path = os.getcwd()
@@ -979,7 +992,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         (and the next character is a '/' or the end of the string).
 
         """
-        collapsed_path = _url_collapse_path(self.path)
+        collapsed_path = _url_collapse_path(urllib.parse.unquote(self.path))
         dir_sep = collapsed_path.find('/', 1)
         head, tail = collapsed_path[:dir_sep], collapsed_path[dir_sep+1:]
         if head in self.cgi_directories:
@@ -1002,16 +1015,16 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
     def run_cgi(self):
         """Execute a CGI script."""
         dir, rest = self.cgi_info
-
-        i = rest.find('/')
+        path = dir + '/' + rest
+        i = path.find('/', len(dir)+1)
         while i >= 0:
-            nextdir = rest[:i]
-            nextrest = rest[i+1:]
+            nextdir = path[:i]
+            nextrest = path[i+1:]
 
             scriptdir = self.translate_path(nextdir)
             if os.path.isdir(scriptdir):
                 dir, rest = nextdir, nextrest
-                i = rest.find('/')
+                i = path.find('/', len(dir)+1)
             else:
                 break
 

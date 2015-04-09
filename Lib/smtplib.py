@@ -377,6 +377,7 @@ class SMTP:
             if self.debuglevel > 0:
                 print('reply:', repr(line), file=stderr)
             if len(line) > _MAXLINE:
+                self.close()
                 raise SMTPResponseException(500, "Line too long.")
             resp.append(line[4:].strip(b' \t\r\n'))
             code = line[:3]
@@ -477,6 +478,18 @@ class SMTP:
     def rset(self):
         """SMTP 'rset' command -- resets session."""
         return self.docmd("rset")
+
+    def _rset(self):
+        """Internal 'rset' command which ignores any SMTPServerDisconnected error.
+
+        Used internally in the library, since the server disconnected error
+        should appear to the application when the *next* command is issued, if
+        we are doing an internal "safety" reset.
+        """
+        try:
+            self.rset()
+        except SMTPServerDisconnected:
+            pass
 
     def noop(self):
         """SMTP 'noop' command -- doesn't do anything :>"""
@@ -671,9 +684,8 @@ class SMTP:
             if context is None:
                 context = ssl._create_stdlib_context(certfile=certfile,
                                                      keyfile=keyfile)
-            server_hostname = self._host if ssl.HAS_SNI else None
             self.sock = context.wrap_socket(self.sock,
-                                            server_hostname=server_hostname)
+                                            server_hostname=self._host)
             self.file = None
             # RFC 3207:
             # The client MUST discard any knowledge obtained from
@@ -762,7 +774,7 @@ class SMTP:
             if code == 421:
                 self.close()
             else:
-                self.rset()
+                self._rset()
             raise SMTPSenderRefused(code, resp, from_addr)
         senderrs = {}
         if isinstance(to_addrs, str):
@@ -776,14 +788,14 @@ class SMTP:
                 raise SMTPRecipientsRefused(senderrs)
         if len(senderrs) == len(to_addrs):
             # the server refused all our recipients
-            self.rset()
+            self._rset()
             raise SMTPRecipientsRefused(senderrs)
         (code, resp) = self.data(msg)
         if code != 250:
             if code == 421:
                 self.close()
             else:
-                self.rset()
+                self._rset()
             raise SMTPDataError(code, resp)
         #if we got here then somebody got our mail
         return senderrs
@@ -853,6 +865,10 @@ class SMTP:
     def quit(self):
         """Terminate the SMTP session."""
         res = self.docmd("quit")
+        # A new EHLO is required after reconnecting with connect()
+        self.ehlo_resp = self.helo_resp = None
+        self.esmtp_features = {}
+        self.does_esmtp = False
         self.close()
         return res
 
@@ -898,9 +914,8 @@ if _have_ssl:
                 print('connect:', (host, port), file=stderr)
             new_socket = socket.create_connection((host, port), timeout,
                     self.source_address)
-            server_hostname = self._host if ssl.HAS_SNI else None
             new_socket = self.context.wrap_socket(new_socket,
-                                                  server_hostname=server_hostname)
+                                                  server_hostname=self._host)
             return new_socket
 
     __all__.append("SMTP_SSL")

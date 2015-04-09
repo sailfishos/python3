@@ -8,23 +8,22 @@ import re
 import sys
 from collections import Sequence
 from contextlib import contextmanager
-from errno import EINVAL, ENOENT
+from errno import EINVAL, ENOENT, ENOTDIR
 from operator import attrgetter
 from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 
 supports_symlinks = True
-try:
+if os.name == 'nt':
     import nt
-except ImportError:
-    nt = None
-else:
     if sys.getwindowsversion()[:2] >= (6, 0):
         from nt import _getfinalpathname
     else:
         supports_symlinks = False
         _getfinalpathname = None
+else:
+    nt = None
 
 
 __all__ = [
@@ -110,7 +109,7 @@ class _WindowsFlavour(_Flavour):
     has_drv = True
     pathmod = ntpath
 
-    is_supported = (nt is not None)
+    is_supported = (os.name == 'nt')
 
     drive_letters = (
         set(chr(x) for x in range(ord('a'), ord('z') + 1)) |
@@ -574,8 +573,8 @@ class PurePath(object):
             if isinstance(a, PurePath):
                 parts += a._parts
             elif isinstance(a, str):
-                # Assuming a str
-                parts.append(a)
+                # Force-cast str subclasses to str (issue #21127)
+                parts.append(str(a))
             else:
                 raise TypeError(
                     "argument should be a path or str object, not %r"
@@ -666,9 +665,6 @@ class PurePath(object):
             return NotImplemented
         return self._cparts == other._cparts and self._flavour is other._flavour
 
-    def __ne__(self, other):
-        return not self == other
-
     def __hash__(self):
         try:
             return self._hash
@@ -749,17 +745,20 @@ class PurePath(object):
         """Return a new path with the file name changed."""
         if not self.name:
             raise ValueError("%r has an empty name" % (self,))
+        drv, root, parts = self._flavour.parse_parts((name,))
+        if (not name or name[-1] in [self._flavour.sep, self._flavour.altsep]
+            or drv or root or len(parts) != 1):
+            raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
 
     def with_suffix(self, suffix):
         """Return a new path with the file suffix changed (or added, if none)."""
         # XXX if suffix is None, should the current suffix be removed?
-        drv, root, parts = self._flavour.parse_parts((suffix,))
-        if drv or root or len(parts) != 1:
+        f = self._flavour
+        if f.sep in suffix or f.altsep and f.altsep in suffix:
             raise ValueError("Invalid suffix %r" % (suffix))
-        suffix = parts[0]
-        if not suffix.startswith('.'):
+        if suffix and not suffix.startswith('.') or suffix == '.':
             raise ValueError("Invalid suffix %r" % (suffix))
         name = self.name
         if not name:
@@ -1184,7 +1183,7 @@ class Path(PurePath):
         try:
             self.stat()
         except OSError as e:
-            if e.errno != ENOENT:
+            if e.errno not in (ENOENT, ENOTDIR):
                 raise
             return False
         return True
@@ -1196,7 +1195,7 @@ class Path(PurePath):
         try:
             return S_ISDIR(self.stat().st_mode)
         except OSError as e:
-            if e.errno != ENOENT:
+            if e.errno not in (ENOENT, ENOTDIR):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
@@ -1210,7 +1209,7 @@ class Path(PurePath):
         try:
             return S_ISREG(self.stat().st_mode)
         except OSError as e:
-            if e.errno != ENOENT:
+            if e.errno not in (ENOENT, ENOTDIR):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
@@ -1223,7 +1222,7 @@ class Path(PurePath):
         try:
             return S_ISLNK(self.lstat().st_mode)
         except OSError as e:
-            if e.errno != ENOENT:
+            if e.errno not in (ENOENT, ENOTDIR):
                 raise
             # Path doesn't exist
             return False
@@ -1235,7 +1234,7 @@ class Path(PurePath):
         try:
             return S_ISBLK(self.stat().st_mode)
         except OSError as e:
-            if e.errno != ENOENT:
+            if e.errno not in (ENOENT, ENOTDIR):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
@@ -1248,7 +1247,7 @@ class Path(PurePath):
         try:
             return S_ISCHR(self.stat().st_mode)
         except OSError as e:
-            if e.errno != ENOENT:
+            if e.errno not in (ENOENT, ENOTDIR):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
@@ -1261,7 +1260,7 @@ class Path(PurePath):
         try:
             return S_ISFIFO(self.stat().st_mode)
         except OSError as e:
-            if e.errno != ENOENT:
+            if e.errno not in (ENOENT, ENOTDIR):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)
@@ -1274,7 +1273,7 @@ class Path(PurePath):
         try:
             return S_ISSOCK(self.stat().st_mode)
         except OSError as e:
-            if e.errno != ENOENT:
+            if e.errno not in (ENOENT, ENOTDIR):
                 raise
             # Path doesn't exist or is a broken symlink
             # (see https://bitbucket.org/pitrou/pathlib/issue/12/)

@@ -26,7 +26,7 @@ Introduction
 
         A tutorial on *Basic Authentication*, with examples in Python.
 
-**urllib.request** is a `Python <http://www.python.org>`_ module for fetching URLs
+**urllib.request** is a Python module for fetching URLs
 (Uniform Resource Locators). It offers a very simple interface, in the form of
 the *urlopen* function. This is capable of fetching URLs using a variety of
 different protocols. It also offers a slightly more complex interface for
@@ -97,7 +97,7 @@ Data
 ----
 
 Sometimes you want to send data to a URL (often the URL will refer to a CGI
-(Common Gateway Interface) script [#]_ or other web application). With HTTP,
+(Common Gateway Interface) script or other web application). With HTTP,
 this is often done using what's known as a **POST** request. This is often what
 your browser does when you submit a HTML form that you filled in on the web. Not
 all POSTs have to come from forms: you can use a POST to transmit arbitrary data
@@ -572,12 +572,8 @@ Footnotes
 
 This document was reviewed and revised by John Lee.
 
-.. [#] For an introduction to the CGI protocol see
-       `Writing Web Applications in Python <http://www.pyzine.com/Issue008/Section_Articles/article_CGIOne.html>`_.
 .. [#] Like Google for example. The *proper* way to use google from a program
-       is to use `PyGoogle <http://pygoogle.sourceforge.net>`_ of course. See
-       `Voidspace Google <http://www.voidspace.org.uk/python/recipebook.shtml#google>`_
-       for some examples of using the Google API.
+       is to use `PyGoogle <http://pygoogle.sourceforge.net>`_ of course.
 .. [#] Browser sniffing is a very bad practise for website design - building
        sites using web standards is much more sensible. Unfortunately a lot of
        sites still send different versions to different browsers.
@@ -591,5 +587,5 @@ This document was reviewed and revised by John Lee.
        scripts with a localhost server, I have to prevent urllib from using
        the proxy.
 .. [#] urllib opener for SSL proxy (CONNECT method): `ASPN Cookbook Recipe
-       <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/456195>`_.
+       <http://code.activestate.com/recipes/456195/>`_.
 

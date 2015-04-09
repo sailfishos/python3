@@ -6,16 +6,22 @@ This directory is used to build CPython for Microsoft Windows NT version
 bit platforms.  Using this directory requires an installation of
 Microsoft Visual C++ 2010 (MSVC 10.0) of any edition.  The specific
 requirements are as follows:
+
 Visual C++ 2010 Express Edition
     Required for building 32-bit Debug and Release configuration builds.
-    This edition does not support "solution folders", which pcbuild.sln
-    uses; this will not prevent building.
-Visual Studio 2010 Standard Edition
-    Required for building 64-bit Debug and Release configuration builds
+    The Python build solution pcbuild.sln makes use of Solution Folders,
+    which this edition does not support.  Any time pcbuild.sln is opened
+    or reloaded by Visual C++, a warning about Solution Folders will be
+    displayed which can be safely dismissed with no impact on your
+    ability to build Python.
 Visual Studio 2010 Professional Edition
+    Required for building 64-bit Debug and Release configuration builds
+Visual Studio 2010 Premium Edition
     Required for building Release configuration builds that make use of
-    Profile Guided Optimization (PGO), on either platform.  The official
-    Python releases are built with Professional Edition using PGO.
+    Profile Guided Optimization (PGO), on either platform.
+
+Installing Service Pack 1 for Visual Studio 2010 is highly recommended
+to avoid LNK1123 errors.
 
 All you need to do to build is open the solution "pcbuild.sln" in Visual
 Studio, select the desired combination of configuration and platform,
@@ -43,7 +49,7 @@ Debug
     development of CPython, you will most likely use this configuration.
 PGInstrument, PGUpdate
     Used to build Python in Release configuration using PGO, which
-    requires Professional Edition of Visual Studio.  See the "Profile
+    requires Premium Edition of Visual Studio.  See the "Profile
     Guided Optimization" section below for more information.  Build
     output from each of these configurations lands in its own
     sub-directory of this directory.  The official Python releases are
@@ -165,7 +171,7 @@ _lzma
     Homepage:
         http://tukaani.org/xz/
 _ssl
-    Python wrapper for version 1.0.1e of the OpenSSL secure sockets
+    Python wrapper for version 1.0.1j of the OpenSSL secure sockets
     library, which is built by ssl.vcxproj
     Homepage:
         http://www.openssl.org/
@@ -176,7 +182,9 @@ _ssl
     to be somewhere on your PATH.  More recent versions of OpenSSL may
     need a later version of NASM. If OpenSSL's self tests don't pass,
     you should first try to update NASM and do a full rebuild of
-    OpenSSL.
+    OpenSSL.  If you use the Tools\buildbot\external(-amd64).bat method
+    for getting sources, it also downloads a version of NASM which the
+    ssl build script will add to PATH.
 
     If you like to use the official sources instead of the files from
     python.org's subversion repository, Perl is required to build the
@@ -216,9 +224,10 @@ _tkinter
 
     Unlike the other external libraries listed above, Tk must be built
     separately before the _tkinter module can be built. This means that
-    a pre-built Tcl/Tk installation is expected in ..\..\tcltk (tcltk64
-    for 64-bit) relative to this directory.  See "Getting External
-    Sources" below for the easiest method to ensure Tcl/Tk is built.
+    a pre-built Tcl/Tk installation is expected in ..\externals\tcltk
+    (tcltk64 for 64-bit) relative to this directory.  See "Getting
+    External Sources" below for the easiest method to ensure Tcl/Tk is
+    built.
 
 
 Getting External Sources
@@ -238,12 +247,12 @@ directory from ..\, i.e.:
 This extracts all the external sub-projects from
     http://svn.python.org/projects/external
 via Subversion (so you'll need an svn.exe on your PATH) and places them
-in ..\.. (relative to this directory).
+in ..\externals (relative to this directory).
 
 It is also possible to download sources from each project's homepage,
 though you may have to change the names of some folders in order to make
 things work.  For instance, if you were to download a version 5.0.7 of
-XZ Utils, you would need to extract the archive into ..\..\xz-5.0.5
+XZ Utils, you would need to extract the archive into ..\externals\xz-5.0.5
 anyway, since that is where the solution is set to look for xz.  The
 same is true for all other external projects.
 
@@ -260,7 +269,7 @@ The external-amd64.bat file contains this for tcl:
 So for a release build, you'd call it as:
     nmake -f makefile.vc MACHINE=AMD64 INSTALLDIR=..\..\tcltk64 clean all install
 
-Note that the above command is called from within ..\..\tcl-8.6.1.0\win
+Note that the above command is called from within ..\externals\tcl-8.6.1.0\win
 (relative to this directory); don't forget to build Tk as well as Tcl!
 
 This will be cleaned up in the future; http://bugs.python.org/issue15968
@@ -275,8 +284,7 @@ The build process for AMD64 / x64 is very similar to standard builds,
 you just have to set x64 as platform. In addition, the HOST_PYTHON
 environment variable must point to a Python interpreter (at least 2.4),
 to support cross-compilation from Win32.  Note that Visual Studio
-requires either Standard Edition or better, or Express Edition with the
-Windows SDK 64-bit compilers to be available in order to build 64-bit
+requires Professional Edition or better in order to build 64-bit
 binaries.
 
 

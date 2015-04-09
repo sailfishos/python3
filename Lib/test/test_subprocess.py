@@ -786,6 +786,7 @@ class ProcessTestCase(BaseTestCase):
                              stdout=subprocess.PIPE,
                              universal_newlines=1)
         p.stdin.write("line1\n")
+        p.stdin.flush()
         self.assertEqual(p.stdout.readline(), "line1\n")
         p.stdin.write("line3\n")
         p.stdin.close()
@@ -1007,6 +1008,39 @@ class ProcessTestCase(BaseTestCase):
         p = subprocess.Popen([sys.executable, "-c", "pass"], bufsize=None)
         self.assertEqual(p.wait(), 0)
 
+    def _test_bufsize_equal_one(self, line, expected, universal_newlines):
+        # subprocess may deadlock with bufsize=1, see issue #21332
+        with subprocess.Popen([sys.executable, "-c", "import sys;"
+                               "sys.stdout.write(sys.stdin.readline());"
+                               "sys.stdout.flush()"],
+                              stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL,
+                              bufsize=1,
+                              universal_newlines=universal_newlines) as p:
+            p.stdin.write(line) # expect that it flushes the line in text mode
+            os.close(p.stdin.fileno()) # close it without flushing the buffer
+            read_line = p.stdout.readline()
+            try:
+                p.stdin.close()
+            except OSError:
+                pass
+            p.stdin = None
+        self.assertEqual(p.returncode, 0)
+        self.assertEqual(read_line, expected)
+
+    def test_bufsize_equal_one_text_mode(self):
+        # line is flushed in text mode with bufsize=1.
+        # we should get the full line in return
+        line = "line\n"
+        self._test_bufsize_equal_one(line, line, universal_newlines=True)
+
+    def test_bufsize_equal_one_binary_mode(self):
+        # line is not flushed in binary mode with bufsize=1.
+        # we should get empty response
+        line = b'line' + os.linesep.encode() # assume ascii-based locale
+        self._test_bufsize_equal_one(line, b'', universal_newlines=False)
+
     def test_leaking_fds_on_error(self):
         # see bug #5179: Popen leaks file descriptors to PIPEs if
         # the child fails to execute; this will eventually exhaust
@@ -1051,6 +1085,59 @@ class ProcessTestCase(BaseTestCase):
                     exc = e
             if exc is not None:
                 raise exc
+
+    @unittest.skipIf(threading is None, "threading required")
+    def test_threadsafe_wait(self):
+        """Issue21291: Popen.wait() needs to be threadsafe for returncode."""
+        proc = subprocess.Popen([sys.executable, '-c',
+                                 'import time; time.sleep(12)'])
+        self.assertEqual(proc.returncode, None)
+        results = []
+
+        def kill_proc_timer_thread():
+            results.append(('thread-start-poll-result', proc.poll()))
+            # terminate it from the thread and wait for the result.
+            proc.kill()
+            proc.wait()
+            results.append(('thread-after-kill-and-wait', proc.returncode))
+            # this wait should be a no-op given the above.
+            proc.wait()
+            results.append(('thread-after-second-wait', proc.returncode))
+
+        # This is a timing sensitive test, the failure mode is
+        # triggered when both the main thread and this thread are in
+        # the wait() call at once.  The delay here is to allow the
+        # main thread to most likely be blocked in its wait() call.
+        t = threading.Timer(0.2, kill_proc_timer_thread)
+        t.start()
+
+        if mswindows:
+            expected_errorcode = 1
+        else:
+            # Should be -9 because of the proc.kill() from the thread.
+            expected_errorcode = -9
+
+        # Wait for the process to finish; the thread should kill it
+        # long before it finishes on its own.  Supplying a timeout
+        # triggers a different code path for better coverage.
+        proc.wait(timeout=20)
+        self.assertEqual(proc.returncode, expected_errorcode,
+                         msg="unexpected result in wait from main thread")
+
+        # This should be a no-op with no change in returncode.
+        proc.wait()
+        self.assertEqual(proc.returncode, expected_errorcode,
+                         msg="unexpected result in second main wait.")
+
+        t.join()
+        # Ensure that all of the thread results are as expected.
+        # When a race condition occurs in wait(), the returncode could
+        # be set by the wrong thread that doesn't actually have it
+        # leading to an incorrect value.
+        self.assertEqual([('thread-start-poll-result', None),
+                          ('thread-after-kill-and-wait', expected_errorcode),
+                          ('thread-after-second-wait', expected_errorcode)],
+                         results)
 
     def test_issue8780(self):
         # Ensure that stdout is inherited from the parent
@@ -1872,6 +1959,86 @@ class POSIXProcessTestCase(BaseTestCase):
                          "Some fds not in pass_fds were left open")
         self.assertIn(1, remaining_fds, "Subprocess failed")
 
+
+    @unittest.skipIf(sys.platform.startswith("freebsd") and
+                     os.stat("/dev").st_dev == os.stat("/dev/fd").st_dev,
+                     "Requires fdescfs mounted on /dev/fd on FreeBSD.")
+    def test_close_fds_when_max_fd_is_lowered(self):
+        """Confirm that issue21618 is fixed (may fail under valgrind)."""
+        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+
+        # This launches the meat of the test in a child process to
+        # avoid messing with the larger unittest processes maximum
+        # number of file descriptors.
+        #  This process launches:
+        #  +--> Process that lowers its RLIMIT_NOFILE aftr setting up
+        #    a bunch of high open fds above the new lower rlimit.
+        #    Those are reported via stdout before launching a new
+        #    process with close_fds=False to run the actual test:
+        #    +--> The TEST: This one launches a fd_status.py
+        #      subprocess with close_fds=True so we can find out if
+        #      any of the fds above the lowered rlimit are still open.
+        p = subprocess.Popen([sys.executable, '-c', textwrap.dedent(
+        '''
+        import os, resource, subprocess, sys, textwrap
+        open_fds = set()
+        # Add a bunch more fds to pass down.
+        for _ in range(40):
+            fd = os.open("/dev/null", os.O_RDONLY)
+            open_fds.add(fd)
+
+        # Leave a two pairs of low ones available for use by the
+        # internal child error pipe and the stdout pipe.
+        # We also leave 10 more open as some Python buildbots run into
+        # "too many open files" errors during the test if we do not.
+        for fd in sorted(open_fds)[:14]:
+            os.close(fd)
+            open_fds.remove(fd)
+
+        for fd in open_fds:
+            #self.addCleanup(os.close, fd)
+            os.set_inheritable(fd, True)
+
+        max_fd_open = max(open_fds)
+
+        # Communicate the open_fds to the parent unittest.TestCase process.
+        print(','.join(map(str, sorted(open_fds))))
+        sys.stdout.flush()
+
+        rlim_cur, rlim_max = resource.getrlimit(resource.RLIMIT_NOFILE)
+        try:
+            # 29 is lower than the highest fds we are leaving open.
+            resource.setrlimit(resource.RLIMIT_NOFILE, (29, rlim_max))
+            # Launch a new Python interpreter with our low fd rlim_cur that
+            # inherits open fds above that limit.  It then uses subprocess
+            # with close_fds=True to get a report of open fds in the child.
+            # An explicit list of fds to check is passed to fd_status.py as
+            # letting fd_status rely on its default logic would miss the
+            # fds above rlim_cur as it normally only checks up to that limit.
+            subprocess.Popen(
+                [sys.executable, '-c',
+                 textwrap.dedent("""
+                     import subprocess, sys
+                     subprocess.Popen([sys.executable, %r] +
+                                      [str(x) for x in range({max_fd})],
+                                      close_fds=True).wait()
+                     """.format(max_fd=max_fd_open+1))],
+                close_fds=False).wait()
+        finally:
+            resource.setrlimit(resource.RLIMIT_NOFILE, (rlim_cur, rlim_max))
+        ''' % fd_status)], stdout=subprocess.PIPE)
+
+        output, unused_stderr = p.communicate()
+        output_lines = output.splitlines()
+        self.assertEqual(len(output_lines), 2,
+                         msg="expected exactly two lines of output:\n%r" % output)
+        opened_fds = set(map(int, output_lines[0].strip().split(b',')))
+        remaining_fds = set(map(int, output_lines[1].strip().split(b',')))
+
+        self.assertFalse(remaining_fds & opened_fds,
+                         msg="Some fds were left open.")
+
+
     # Mac OS X Tiger (10.4) has a kernel bug: sometimes, the file
     # descriptor of a pipe closed in the parent process is valid in the
     # child process according to fstat(), but the mode of the file
@@ -2048,6 +2215,39 @@ class POSIXProcessTestCase(BaseTestCase):
         remaining_fds = set(map(int, output.split(b',')))
 
         self.assertNotIn(fd, remaining_fds)
+
+    @support.cpython_only
+    def test_fork_exec(self):
+        # Issue #22290: fork_exec() must not crash on memory allocation failure
+        # or other errors
+        import _posixsubprocess
+        gc_enabled = gc.isenabled()
+        try:
+            # Use a preexec function and enable the garbage collector
+            # to force fork_exec() to re-enable the garbage collector
+            # on error.
+            func = lambda: None
+            gc.enable()
+
+            executable_list = "exec"   # error: must be a sequence
+
+            for args, exe_list, cwd, env_list in (
+                (123,      [b"exe"], None, [b"env"]),
+                ([b"arg"], 123,      None, [b"env"]),
+                ([b"arg"], [b"exe"], 123,  [b"env"]),
+                ([b"arg"], [b"exe"], None, 123),
+            ):
+                with self.assertRaises(TypeError):
+                    _posixsubprocess.fork_exec(
+                        args, exe_list,
+                        True, [], cwd, env_list,
+                        -1, -1, -1, -1,
+                        1, 2, 3, 4,
+                        True, True, func)
+        finally:
+            if not gc_enabled:
+                gc.disable()
+
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

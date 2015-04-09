@@ -5,6 +5,7 @@ See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 
 import sys
 import pickle
+import random
 import unittest
 
 from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
@@ -76,7 +77,17 @@ class PicklableFixedOffset(FixedOffset):
     def __init__(self, offset=None, name=None, dstoffset=None):
         FixedOffset.__init__(self, offset, name, dstoffset)
 
+class _TZInfo(tzinfo):
+    def utcoffset(self, datetime_module):
+        return random.random()
+
 class TestTZInfo(unittest.TestCase):
+
+    def test_refcnt_crash_bug_22044(self):
+        tz1 = _TZInfo()
+        dt1 = datetime(2014, 7, 21, 11, 32, 3, 0, tz1)
+        with self.assertRaises(TypeError):
+            dt1.utcoffset()
 
     def test_non_abstractness(self):
         # In order to allow subclasses to get pickled, the C implementation
@@ -1671,11 +1682,12 @@ class TestDateTime(TestDate):
 
     def test_more_pickling(self):
         a = self.theclass(2003, 2, 7, 16, 48, 37, 444116)
-        s = pickle.dumps(a)
-        b = pickle.loads(s)
-        self.assertEqual(b.year, 2003)
-        self.assertEqual(b.month, 2)
-        self.assertEqual(b.day, 7)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            s = pickle.dumps(a, proto)
+            b = pickle.loads(s)
+            self.assertEqual(b.year, 2003)
+            self.assertEqual(b.month, 2)
+            self.assertEqual(b.day, 7)
 
     def test_pickling_subclass_datetime(self):
         args = 6, 7, 23, 20, 59, 1, 64**2

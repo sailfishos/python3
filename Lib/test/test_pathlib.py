@@ -197,6 +197,25 @@ class _BasePurePathTest(object):
         self.assertEqual(P(P('a'), 'b'), P('a/b'))
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
 
+    def _check_str_subclass(self, *args):
+        # Issue #21127: it should be possible to construct a PurePath object
+        # from an str subclass instance, and it then gets converted to
+        # a pure str object.
+        class StrSubclass(str):
+            pass
+        P = self.cls
+        p = P(*(StrSubclass(x) for x in args))
+        self.assertEqual(p, P(*args))
+        for part in p.parts:
+            self.assertIs(type(part), str)
+
+    def test_str_subclass_common(self):
+        self._check_str_subclass('')
+        self._check_str_subclass('.')
+        self._check_str_subclass('a')
+        self._check_str_subclass('a/b.txt')
+        self._check_str_subclass('/a/b.txt')
+
     def test_join_common(self):
         P = self.cls
         p = P('a/b')
@@ -521,6 +540,10 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('').with_name, 'd.xml')
         self.assertRaises(ValueError, P('.').with_name, 'd.xml')
         self.assertRaises(ValueError, P('/').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('a/b').with_name, '')
+        self.assertRaises(ValueError, P('a/b').with_name, '/c')
+        self.assertRaises(ValueError, P('a/b').with_name, 'c/')
+        self.assertRaises(ValueError, P('a/b').with_name, 'c/d')
 
     def test_with_suffix_common(self):
         P = self.cls
@@ -528,6 +551,9 @@ class _BasePurePathTest(object):
         self.assertEqual(P('/a/b').with_suffix('.gz'), P('/a/b.gz'))
         self.assertEqual(P('a/b.py').with_suffix('.gz'), P('a/b.gz'))
         self.assertEqual(P('/a/b.py').with_suffix('.gz'), P('/a/b.gz'))
+        # Stripping suffix
+        self.assertEqual(P('a/b.py').with_suffix(''), P('a/b'))
+        self.assertEqual(P('/a/b').with_suffix(''), P('/a/b'))
         # Path doesn't have a "filename" component
         self.assertRaises(ValueError, P('').with_suffix, '.gz')
         self.assertRaises(ValueError, P('.').with_suffix, '.gz')
@@ -535,9 +561,12 @@ class _BasePurePathTest(object):
         # Invalid suffix
         self.assertRaises(ValueError, P('a/b').with_suffix, 'gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/')
+        self.assertRaises(ValueError, P('a/b').with_suffix, '.')
         self.assertRaises(ValueError, P('a/b').with_suffix, '/.gz')
         self.assertRaises(ValueError, P('a/b').with_suffix, 'c/d')
         self.assertRaises(ValueError, P('a/b').with_suffix, '.c/.d')
+        self.assertRaises(ValueError, P('a/b').with_suffix, './.d')
+        self.assertRaises(ValueError, P('a/b').with_suffix, '.d/.')
 
     def test_relative_to_common(self):
         P = self.cls
@@ -689,6 +718,17 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(str(p), '\\\\a\\b\\c')
         p = self.cls('//a/b/c/d')
         self.assertEqual(str(p), '\\\\a\\b\\c\\d')
+
+    def test_str_subclass(self):
+        self._check_str_subclass('c:')
+        self._check_str_subclass('c:a')
+        self._check_str_subclass('c:a\\b.txt')
+        self._check_str_subclass('c:\\')
+        self._check_str_subclass('c:\\a')
+        self._check_str_subclass('c:\\a\\b.txt')
+        self._check_str_subclass('\\\\some\\share')
+        self._check_str_subclass('\\\\some\\share\\a')
+        self._check_str_subclass('\\\\some\\share\\a\\b.txt')
 
     def test_eq(self):
         P = self.cls
@@ -920,6 +960,10 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, P('c:').with_name, 'd.xml')
         self.assertRaises(ValueError, P('c:/').with_name, 'd.xml')
         self.assertRaises(ValueError, P('//My/Share').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('c:a/b').with_name, 'd:')
+        self.assertRaises(ValueError, P('c:a/b').with_name, 'd:e')
+        self.assertRaises(ValueError, P('c:a/b').with_name, 'd:/e')
+        self.assertRaises(ValueError, P('c:a/b').with_name, '//My/Share')
 
     def test_with_suffix(self):
         P = self.cls
@@ -1170,7 +1214,7 @@ class _BasePathTest(object):
 
     def setUp(self):
         os.mkdir(BASE)
-        self.addCleanup(shutil.rmtree, BASE)
+        self.addCleanup(support.rmtree, BASE)
         os.mkdir(join('dirA'))
         os.mkdir(join('dirB'))
         os.mkdir(join('dirC'))
@@ -1232,9 +1276,12 @@ class _BasePathTest(object):
         self.assertIs(True, p.exists())
         self.assertIs(True, (p / 'dirA').exists())
         self.assertIs(True, (p / 'fileA').exists())
+        self.assertIs(False, (p / 'fileA' / 'bah').exists())
         if not symlink_skip_reason:
             self.assertIs(True, (p / 'linkA').exists())
             self.assertIs(True, (p / 'linkB').exists())
+            self.assertIs(True, (p / 'linkB' / 'fileB').exists())
+            self.assertIs(False, (p / 'linkA' / 'bah').exists())
         self.assertIs(False, (p / 'foo').exists())
         self.assertIs(False, P('/xyzzy').exists())
 
@@ -1355,7 +1402,7 @@ class _BasePathTest(object):
         self._check_resolve_relative(p, P(BASE, 'dirB', 'fileB'))
         # Now create absolute symlinks
         d = tempfile.mkdtemp(suffix='-dirD')
-        self.addCleanup(shutil.rmtree, d)
+        self.addCleanup(support.rmtree, d)
         os.symlink(os.path.join(d), join('dirA', 'linkX'))
         os.symlink(join('dirB'), os.path.join(d, 'linkY'))
         p = P(BASE, 'dirA', 'linkX', 'linkY', 'fileB')
@@ -1582,6 +1629,7 @@ class _BasePathTest(object):
         self.assertTrue((P / 'dirA').is_dir())
         self.assertFalse((P / 'fileA').is_dir())
         self.assertFalse((P / 'non-existing').is_dir())
+        self.assertFalse((P / 'fileA' / 'bah').is_dir())
         if not symlink_skip_reason:
             self.assertFalse((P / 'linkA').is_dir())
             self.assertTrue((P / 'linkB').is_dir())
@@ -1592,6 +1640,7 @@ class _BasePathTest(object):
         self.assertTrue((P / 'fileA').is_file())
         self.assertFalse((P / 'dirA').is_file())
         self.assertFalse((P / 'non-existing').is_file())
+        self.assertFalse((P / 'fileA' / 'bah').is_file())
         if not symlink_skip_reason:
             self.assertTrue((P / 'linkA').is_file())
             self.assertFalse((P / 'linkB').is_file())
@@ -1602,6 +1651,7 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA').is_symlink())
         self.assertFalse((P / 'dirA').is_symlink())
         self.assertFalse((P / 'non-existing').is_symlink())
+        self.assertFalse((P / 'fileA' / 'bah').is_symlink())
         if not symlink_skip_reason:
             self.assertTrue((P / 'linkA').is_symlink())
             self.assertTrue((P / 'linkB').is_symlink())
@@ -1612,6 +1662,7 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA').is_fifo())
         self.assertFalse((P / 'dirA').is_fifo())
         self.assertFalse((P / 'non-existing').is_fifo())
+        self.assertFalse((P / 'fileA' / 'bah').is_fifo())
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
     def test_is_fifo_true(self):
@@ -1626,6 +1677,7 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA').is_socket())
         self.assertFalse((P / 'dirA').is_socket())
         self.assertFalse((P / 'non-existing').is_socket())
+        self.assertFalse((P / 'fileA' / 'bah').is_socket())
 
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
     def test_is_socket_true(self):
@@ -1646,12 +1698,14 @@ class _BasePathTest(object):
         self.assertFalse((P / 'fileA').is_block_device())
         self.assertFalse((P / 'dirA').is_block_device())
         self.assertFalse((P / 'non-existing').is_block_device())
+        self.assertFalse((P / 'fileA' / 'bah').is_block_device())
 
     def test_is_char_device_false(self):
         P = self.cls(BASE)
         self.assertFalse((P / 'fileA').is_char_device())
         self.assertFalse((P / 'dirA').is_char_device())
         self.assertFalse((P / 'non-existing').is_char_device())
+        self.assertFalse((P / 'fileA' / 'bah').is_char_device())
 
     def test_is_char_device_true(self):
         # Under Unix, /dev/null should generally be a char device

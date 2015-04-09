@@ -42,15 +42,21 @@ Copyright (c) Corporation for National Research Initiatives.
 #include <windows.h>
 #endif
 
+/*[clinic input]
+module _codecs
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e1390e3da3cb9deb]*/
+
+
 /* --- Registry ----------------------------------------------------------- */
 
 PyDoc_STRVAR(register__doc__,
 "register(search_function)\n\
 \n\
 Register a codec search function. Search functions are expected to take\n\
-one argument, the encoding name in all lower case letters, and return\n\
-a tuple of functions (encoder, decoder, stream_reader, stream_writer)\n\
-(or a CodecInfo object).");
+one argument, the encoding name in all lower case letters, and either\n\
+return None, or a tuple of functions (encoder, decoder, stream_reader,\n\
+stream_writer) (or a CodecInfo object).");
 
 static
 PyObject *codec_register(PyObject *self, PyObject *search_function)
@@ -133,6 +139,53 @@ codec_decode(PyObject *self, PyObject *args)
 }
 
 /* --- Helpers ------------------------------------------------------------ */
+
+/*[clinic input]
+_codecs._forget_codec
+
+    encoding: str
+    /
+
+Purge the named codec from the internal codec lookup cache
+[clinic start generated code]*/
+
+PyDoc_STRVAR(_codecs__forget_codec__doc__,
+"_forget_codec($module, encoding, /)\n"
+"--\n"
+"\n"
+"Purge the named codec from the internal codec lookup cache");
+
+#define _CODECS__FORGET_CODEC_METHODDEF    \
+    {"_forget_codec", (PyCFunction)_codecs__forget_codec, METH_VARARGS, _codecs__forget_codec__doc__},
+
+static PyObject *
+_codecs__forget_codec_impl(PyModuleDef *module, const char *encoding);
+
+static PyObject *
+_codecs__forget_codec(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    const char *encoding;
+
+    if (!PyArg_ParseTuple(args,
+        "s:_forget_codec",
+        &encoding))
+        goto exit;
+    return_value = _codecs__forget_codec_impl(module, encoding);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+_codecs__forget_codec_impl(PyModuleDef *module, const char *encoding)
+/*[clinic end generated code: output=a75e631591702a5c input=18d5d92d0e386c38]*/
+{
+    if (_PyCodec_Forget(encoding) < 0) {
+        return NULL;
+    };
+    Py_RETURN_NONE;
+}
 
 static
 PyObject *codec_tuple(PyObject *unicode,
@@ -231,8 +284,6 @@ unicode_internal_decode(PyObject *self,
 {
     PyObject *obj;
     const char *errors = NULL;
-    const char *data;
-    Py_ssize_t size;
 
     if (!PyArg_ParseTuple(args, "O|z:unicode_internal_decode",
                           &obj, &errors))
@@ -245,11 +296,16 @@ unicode_internal_decode(PyObject *self,
         return codec_tuple(obj, PyUnicode_GET_LENGTH(obj));
     }
     else {
-        if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
+        Py_buffer view;
+        PyObject *result;
+        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0)
             return NULL;
 
-        return codec_tuple(_PyUnicode_DecodeUnicodeInternal(data, size, errors),
-                           size);
+        result = codec_tuple(
+                _PyUnicode_DecodeUnicodeInternal(view.buf, view.len, errors),
+                view.len);
+        PyBuffer_Release(&view);
+        return result;
     }
 }
 
@@ -674,8 +730,6 @@ unicode_internal_encode(PyObject *self,
 {
     PyObject *obj;
     const char *errors = NULL;
-    const char *data;
-    Py_ssize_t len, size;
 
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
                      "unicode_internal codec has been deprecated",
@@ -688,6 +742,7 @@ unicode_internal_encode(PyObject *self,
 
     if (PyUnicode_Check(obj)) {
         Py_UNICODE *u;
+        Py_ssize_t len, size;
 
         if (PyUnicode_READY(obj) < 0)
             return NULL;
@@ -702,9 +757,13 @@ unicode_internal_encode(PyObject *self,
                            PyUnicode_GET_LENGTH(obj));
     }
     else {
-        if (PyObject_AsReadBuffer(obj, (const void **)&data, &size))
+        Py_buffer view;
+        PyObject *result;
+        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0)
             return NULL;
-        return codec_tuple(PyBytes_FromStringAndSize(data, size), size);
+        result = codec_tuple(PyBytes_FromStringAndSize(view.buf, view.len), view.len);
+        PyBuffer_Release(&view);
+        return result;
     }
 }
 
@@ -1168,6 +1227,7 @@ static PyMethodDef _codecs_functions[] = {
         register_error__doc__},
     {"lookup_error",            lookup_error,                   METH_VARARGS,
         lookup_error__doc__},
+    _CODECS__FORGET_CODEC_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 

@@ -24,13 +24,14 @@ __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __credits__ = ('GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, '
                'Skip Montanaro, Raymond Hettinger, Trent Nelson, '
                'Michael Foord')
-import builtins
-import re
-import sys
-from token import *
 from codecs import lookup, BOM_UTF8
 import collections
 from io import TextIOWrapper
+from itertools import chain
+import re
+import sys
+from token import *
+
 cookie_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
@@ -229,20 +230,29 @@ class Untokenizer:
 
     def add_whitespace(self, start):
         row, col = start
-        assert row <= self.prev_row
+        if row < self.prev_row or row == self.prev_row and col < self.prev_col:
+            raise ValueError("start ({},{}) precedes previous end ({},{})"
+                             .format(row, col, self.prev_row, self.prev_col))
+        row_offset = row - self.prev_row
+        if row_offset:
+            self.tokens.append("\\\n" * row_offset)
+            self.prev_col = 0
         col_offset = col - self.prev_col
         if col_offset:
             self.tokens.append(" " * col_offset)
 
     def untokenize(self, iterable):
-        for t in iterable:
+        it = iter(iterable)
+        for t in it:
             if len(t) == 2:
-                self.compat(t, iterable)
+                self.compat(t, it)
                 break
             tok_type, token, start, end, line = t
             if tok_type == ENCODING:
                 self.encoding = token
                 continue
+            if tok_type == ENDMARKER:
+                break
             self.add_whitespace(start)
             self.tokens.append(token)
             self.prev_row, self.prev_col = end
@@ -252,17 +262,12 @@ class Untokenizer:
         return "".join(self.tokens)
 
     def compat(self, token, iterable):
-        startline = False
         indents = []
         toks_append = self.tokens.append
-        toknum, tokval = token
-
-        if toknum in (NAME, NUMBER):
-            tokval += ' '
-        if toknum in (NEWLINE, NL):
-            startline = True
+        startline = token[0] in (NEWLINE, NL)
         prevstring = False
-        for tok in iterable:
+
+        for tok in chain([token], iterable):
             toknum, tokval = tok[:2]
             if toknum == ENCODING:
                 self.encoding = tokval
@@ -424,11 +429,13 @@ def detect_encoding(readline):
     return default, [first, second]
 
 
+_builtin_open = open
+
 def open(filename):
     """Open a file in read only mode using the encoding detected by
     detect_encoding().
     """
-    buffer = builtins.open(filename, 'rb')
+    buffer = _builtin_open(filename, 'rb')
     encoding, lines = detect_encoding(buffer.readline)
     buffer.seek(0)
     text = TextIOWrapper(buffer, encoding, line_buffering=True)
@@ -651,7 +658,7 @@ def main():
         # Tokenize the input
         if args.filename:
             filename = args.filename
-            with builtins.open(filename, 'rb') as f:
+            with _builtin_open(filename, 'rb') as f:
                 tokens = list(tokenize(f.readline))
         else:
             filename = "<stdin>"

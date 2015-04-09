@@ -716,9 +716,11 @@ class _TestQueue(BaseTestCase):
     def test_timeout(self):
         q = multiprocessing.Queue()
         start = time.time()
-        self.assertRaises(pyqueue.Empty, q.get, True, 0.2)
+        self.assertRaises(pyqueue.Empty, q.get, True, 0.200)
         delta = time.time() - start
-        self.assertGreaterEqual(delta, 0.18)
+        # Tolerate a delta of 30 ms because of the bad clock resolution on
+        # Windows (usually 15.6 ms)
+        self.assertGreaterEqual(delta, 0.170)
 
 #
 #
@@ -1809,6 +1811,17 @@ class _TestPool(BaseTestCase):
                     sys.excepthook(*sys.exc_info())
             self.assertIn('raise RuntimeError(123) # some comment',
                           f1.getvalue())
+
+    @classmethod
+    def _test_wrapped_exception(cls):
+        raise RuntimeError('foo')
+
+    def test_wrapped_exception(self):
+        # Issue #20980: Should not wrap exception when using thread pool
+        with self.Pool(1) as p:
+            with self.assertRaises(RuntimeError):
+                p.apply(self._test_wrapped_exception)
+
 
 def raising():
     raise KeyError("key")
@@ -3651,7 +3664,7 @@ class TestSemaphoreTracker(unittest.TestCase):
         _multiprocessing.sem_unlink(name1)
         p.terminate()
         p.wait()
-        time.sleep(1.0)
+        time.sleep(2.0)
         with self.assertRaises(OSError) as ctx:
             _multiprocessing.sem_unlink(name2)
         # docs say it should be ENOENT, but OSX seems to give EINVAL

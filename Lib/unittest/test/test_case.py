@@ -14,7 +14,7 @@ from test import support
 
 import unittest
 
-from .support import (
+from unittest.test.support import (
     TestEquality, TestHashing, LoggingResult, LegacyLoggingResult,
     ResultWithNoStartTestRunStopTestRun
 )
@@ -395,6 +395,34 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         expected = ['startTest', 'setUp', 'test', 'tearDown',
                     'addSubTestFailure', 'stopTest']
         Foo(events).run(result)
+        self.assertEqual(events, expected)
+
+    def test_subtests_failfast(self):
+        # Ensure proper test flow with subtests and failfast (issue #22894)
+        events = []
+
+        class Foo(unittest.TestCase):
+            def test_a(self):
+                with self.subTest():
+                    events.append('a1')
+                events.append('a2')
+
+            def test_b(self):
+                with self.subTest():
+                    events.append('b1')
+                with self.subTest():
+                    self.fail('failure')
+                events.append('b2')
+
+            def test_c(self):
+                events.append('c')
+
+        result = unittest.TestResult()
+        result.failfast = True
+        suite = unittest.makeSuite(Foo)
+        suite.run(result)
+
+        expected = ['a1', 'a2', 'b1']
         self.assertEqual(events, expected)
 
     # "This class attribute gives the exception raised by the test() method.
@@ -1126,6 +1154,18 @@ test case
                 self.assertRaisesRegex, Exception, 'x',
                 lambda: None)
 
+    def testAssertRaisesRegexInvalidRegex(self):
+        # Issue 20145.
+        class MyExc(Exception):
+            pass
+        self.assertRaises(TypeError, self.assertRaisesRegex, MyExc, lambda: True)
+
+    def testAssertWarnsRegexInvalidRegex(self):
+        # Issue 20145.
+        class MyWarn(Warning):
+            pass
+        self.assertRaises(TypeError, self.assertWarnsRegex, MyWarn, lambda: True)
+
     def testAssertRaisesRegexMismatch(self):
         def Stub():
             raise Exception('Unexpected')
@@ -1337,7 +1377,7 @@ test case
         self.checkAssertLogsPerLevel('ERROR')
 
     def checkAssertLogsPerLogger(self, logger):
-        # Check per-logger fitering
+        # Check per-logger filtering
         with self.assertNoStderr():
             with self.assertLogs(level='DEBUG') as outer_cm:
                 with self.assertLogs(logger, level='DEBUG') as cm:

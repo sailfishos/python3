@@ -32,7 +32,7 @@ Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python-2.0
 Group:          Development/Languages/Python
-Version:        3.4.0
+Version:        3.4.3
 Release:        0
 Source:         %{name}-%{version}.tar.gz
 Patch0:         skip-sem-test.patch
@@ -345,7 +345,7 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/site-packages/pip*.dist-info
 %{sitedir}/site-packages/setuptools
 %{sitedir}/site-packages/setuptools*.dist-info
-%{sitedir}/site-packages/pkg_resources.py
+%{sitedir}/site-packages/pkg_resources
 %{sitedir}/site-packages/easy_install.py
 %{sitedir}/site-packages/_markerlib
 # executables

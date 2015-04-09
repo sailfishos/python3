@@ -453,11 +453,11 @@ def cache_from_source(path, debug_override=None):
     else:
         suffixes = OPTIMIZED_BYTECODE_SUFFIXES
     head, tail = _path_split(path)
-    base_filename, sep, _ = tail.partition('.')
+    base, sep, rest = tail.rpartition('.')
     tag = sys.implementation.cache_tag
     if tag is None:
         raise NotImplementedError('sys.implementation.cache_tag is None')
-    filename = ''.join([base_filename, sep, tag, suffixes[0]])
+    filename = ''.join([(base if base else rest), sep, tag, suffixes[0]])
     return _path_join(head, _PYCACHE, filename)
 
 
@@ -1218,6 +1218,29 @@ class _SpecMethods:
         _imp.acquire_lock()
         with _ModuleLockManager(self.spec.name):
             return self._load_unlocked()
+
+
+def _fix_up_module(ns, name, pathname, cpathname=None):
+    # This function is used by PyImport_ExecCodeModuleObject().
+    loader = ns.get('__loader__')
+    spec = ns.get('__spec__')
+    if not loader:
+        if spec:
+            loader = spec.loader
+        elif pathname == cpathname:
+            loader = SourcelessFileLoader(name, pathname)
+        else:
+            loader = SourceFileLoader(name, pathname)
+    if not spec:
+        spec = spec_from_file_location(name, pathname, loader=loader)
+    try:
+        ns['__spec__'] = spec
+        ns['__loader__'] = loader
+        ns['__file__'] = pathname
+        ns['__cached__'] = cpathname
+    except Exception:
+        # Not important enough to report.
+        pass
 
 
 # Loaders #####################################################################

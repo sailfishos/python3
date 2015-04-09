@@ -76,7 +76,7 @@ Glossary
 
    BDFL
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
-      <http://www.python.org/~guido/>`_, Python's creator.
+      <https://www.python.org/~guido/>`_, Python's creator.
 
    binary file
       A :term:`file object` able to read and write
@@ -141,7 +141,7 @@ Glossary
 
    CPython
       The canonical implementation of the Python programming language, as
-      distributed on `python.org <http://python.org>`_.  The term "CPython"
+      distributed on `python.org <https://www.python.org>`_.  The term "CPython"
       is used when necessary to distinguish this implementation from others
       such as Jython or IronPython.
 
@@ -292,7 +292,7 @@ Glossary
    generator
       A function which returns an iterator.  It looks like a normal function
       except that it contains :keyword:`yield` statements for producing a series
-      a values usable in a for-loop or that can be retrieved one at a time with
+      of values usable in a for-loop or that can be retrieved one at a time with
       the :func:`next` function. Each :keyword:`yield` temporarily suspends
       processing, remembering the location execution state (including local
       variables and pending try-statements).  When the generator resumes, it
@@ -355,8 +355,8 @@ Glossary
       All of Python's immutable built-in objects are hashable, while no mutable
       containers (such as lists or dictionaries) are.  Objects which are
       instances of user-defined classes are hashable by default; they all
-      compare unequal (except with themselves), and their hash value is their
-      :func:`id`.
+      compare unequal (except with themselves), and their hash value is derived
+      from their :func:`id`.
 
    IDLE
       An Integrated Development Environment for Python.  IDLE is a basic editor
@@ -530,7 +530,7 @@ Glossary
    method resolution order
       Method Resolution Order is the order in which base classes are searched
       for a member during lookup. See `The Python 2.3 Method Resolution Order
-      <http://www.python.org/download/releases/2.3/mro/>`_.
+      <https://www.python.org/download/releases/2.3/mro/>`_.
 
    module
       An object that serves as an organizational unit of Python code.  Modules
@@ -820,10 +820,13 @@ Glossary
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
       include :data:`sys.float_info` and the return value of :func:`os.stat`.
 
+   text encoding
+      A codec which encodes Unicode strings to bytes.
+
    text file
       A :term:`file object` able to read and write :class:`str` objects.
       Often, a text file actually accesses a byte-oriented datastream
-      and handles the text encoding automatically.
+      and handles the :term:`text encoding` automatically.
 
       .. seealso::
          A :term:`binary file` reads and write :class:`bytes` objects.
@@ -848,7 +851,7 @@ Glossary
       recognized as ending a line: the Unix end-of-line convention ``'\n'``,
       the Windows convention ``'\r\n'``, and the old Macintosh convention
       ``'\r'``.  See :pep:`278` and :pep:`3116`, as well as
-      :func:`str.splitlines` for an additional use.
+      :func:`bytes.splitlines` for an additional use.
 
    view
       The objects returned from :meth:`dict.keys`, :meth:`dict.values`, and
@@ -856,6 +859,14 @@ Glossary
       that will see changes in the underlying dictionary.  To force the
       dictionary view to become a full list use ``list(dictview)``.  See
       :ref:`dict-views`.
+
+   virtual environment
+      A cooperatively isolated runtime environment that allows Python users
+      and applications to install and upgrade Python distribution packages
+      without interfering with the behaviour of other Python applications
+      running on the same system.
+
+      See also :ref:`scripts-pyvenv`
 
    virtual machine
       A computer defined entirely in software.  Python's virtual machine

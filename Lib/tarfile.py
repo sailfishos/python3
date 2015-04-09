@@ -65,8 +65,6 @@ except NameError:
 # from tarfile import *
 __all__ = ["TarFile", "TarInfo", "is_tarfile", "TarError"]
 
-from builtins import open as _open # Since 'open' is TarFile.open
-
 #---------------------------------------------------------
 # tar constants
 #---------------------------------------------------------
@@ -1425,7 +1423,8 @@ class TarFile(object):
             fileobj = bltn_open(name, self._mode)
             self._extfileobj = False
         else:
-            if name is None and hasattr(fileobj, "name"):
+            if (name is None and hasattr(fileobj, "name") and
+                isinstance(fileobj.name, (str, bytes))):
                 name = fileobj.name
             if hasattr(fileobj, "mode"):
                 self._mode = fileobj.mode

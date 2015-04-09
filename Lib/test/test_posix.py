@@ -757,7 +757,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
     def test_getgroups(self):
-        with os.popen('id -G') as idg:
+        with os.popen('id -G 2>/dev/null') as idg:
             groups = idg.read().strip()
             ret = idg.close()
 
@@ -768,7 +768,7 @@ class PosixTester(unittest.TestCase):
         if sys.platform == 'darwin':
             import sysconfig
             dt = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or '10.0'
-            if float(dt) < 10.6:
+            if tuple(int(n) for n in dt.split('.')[0:2]) < (10, 6):
                 raise unittest.SkipTest("getgroups(2) is broken prior to 10.6")
 
         # 'id -G' and 'os.getgroups()' should return the same
@@ -1125,18 +1125,19 @@ class PosixTester(unittest.TestCase):
         """
         Test functions that call path_error2(), providing two filenames in their exceptions.
         """
-        for name in ("rename", "replace", "link", "symlink"):
+        for name in ("rename", "replace", "link"):
             function = getattr(os, name, None)
+            if function is None:
+                continue
 
-            if function:
-                for dst in ("noodly2", support.TESTFN):
-                    try:
-                        function('doesnotexistfilename', dst)
-                    except OSError as e:
-                        self.assertIn("'doesnotexistfilename' -> '{}'".format(dst), str(e))
-                        break
-                else:
-                    self.fail("No valid path_error2() test for os." + name)
+            for dst in ("noodly2", support.TESTFN):
+                try:
+                    function('doesnotexistfilename', dst)
+                except OSError as e:
+                    self.assertIn("'doesnotexistfilename' -> '{}'".format(dst), str(e))
+                    break
+            else:
+                self.fail("No valid path_error2() test for os." + name)
 
 class PosixGroupsTester(unittest.TestCase):
 
@@ -1161,7 +1162,7 @@ class PosixGroupsTester(unittest.TestCase):
     def test_initgroups(self):
         # find missing group
 
-        g = max(self.saved_groups) + 1
+        g = max(self.saved_groups or [0]) + 1
         name = pwd.getpwuid(posix.getuid()).pw_name
         posix.initgroups(name, g)
         self.assertIn(g, posix.getgroups())

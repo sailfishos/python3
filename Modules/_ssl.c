@@ -14,6 +14,8 @@
        http://bugs.python.org/issue8108#msg102867 ?
 */
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 
 #ifdef WITH_THREAD
@@ -2014,8 +2016,10 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     else if (proto_version == PY_SSL_VERSION_TLS1_2)
         ctx = SSL_CTX_new(TLSv1_2_method());
 #endif
+#ifndef OPENSSL_NO_SSL3
     else if (proto_version == PY_SSL_VERSION_SSL3)
         ctx = SSL_CTX_new(SSLv3_method());
+#endif
 #ifndef OPENSSL_NO_SSL2
     else if (proto_version == PY_SSL_VERSION_SSL2)
         ctx = SSL_CTX_new(SSLv2_method());
@@ -2058,6 +2062,21 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (proto_version != PY_SSL_VERSION_SSL2)
         options |= SSL_OP_NO_SSLv2;
     SSL_CTX_set_options(self->ctx, options);
+
+#ifndef OPENSSL_NO_ECDH
+    /* Allow automatic ECDH curve selection (on OpenSSL 1.0.2+), or use
+       prime256v1 by default.  This is Apache mod_ssl's initialization
+       policy, so we should be safe. */
+#if defined(SSL_CTX_set_ecdh_auto)
+    SSL_CTX_set_ecdh_auto(self->ctx, 1);
+#else
+    {
+        EC_KEY *key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+        SSL_CTX_set_tmp_ecdh(self->ctx, key);
+        EC_KEY_free(key);
+    }
+#endif
+#endif
 
 #define SID_CTX "Python"
     SSL_CTX_set_session_id_context(self->ctx, (const unsigned char *) SID_CTX,
@@ -2789,12 +2808,6 @@ context_wrap_socket(PySSLContext *self, PyObject *args, PyObject *kwds)
             &sock, &server_side,
             "idna", &hostname))
             return NULL;
-#if !HAVE_SNI
-        PyMem_Free(hostname);
-        PyErr_SetString(PyExc_ValueError, "server_hostname is not supported "
-                        "by your OpenSSL library");
-        return NULL;
-#endif
     }
 
     res = (PyObject *) newPySSLSocket(self, sock, server_side,
@@ -3220,12 +3233,17 @@ static PyObject *
 PySSL_RAND_add(PyObject *self, PyObject *args)
 {
     char *buf;
-    int len;
+    Py_ssize_t len, written;
     double entropy;
 
     if (!PyArg_ParseTuple(args, "s#d:RAND_add", &buf, &len, &entropy))
         return NULL;
-    RAND_add(buf, len, entropy);
+    do {
+        written = Py_MIN(len, INT_MAX);
+        RAND_add(buf, (int)written, entropy);
+        buf += written;
+        len -= written;
+    } while (len);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -3317,6 +3335,7 @@ Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.\n\
 It is necessary to seed the PRNG with RAND_add() on some platforms before\n\
 using the ssl() function.");
 
+#ifdef HAVE_RAND_EGD
 static PyObject *
 PySSL_RAND_egd(PyObject *self, PyObject *args)
 {
@@ -3344,6 +3363,7 @@ PyDoc_STRVAR(PySSL_RAND_egd_doc,
 Queries the entropy gather daemon (EGD) on the socket named by 'path'.\n\
 Returns number of bytes read.  Raises SSLError if connection to EGD\n\
 fails or if it does not provide enough data to seed PRNG.");
+#endif /* HAVE_RAND_EGD */
 
 #endif /* HAVE_OPENSSL_RAND */
 
@@ -3394,7 +3414,7 @@ asn1obj2py(ASN1_OBJECT *obj)
     int nid;
     const char *ln, *sn;
     char buf[100];
-    int buflen;
+    Py_ssize_t buflen;
 
     nid = OBJ_obj2nid(obj);
     if (nid == NID_undef) {
@@ -3739,8 +3759,10 @@ static PyMethodDef PySSL_methods[] = {
      PySSL_RAND_bytes_doc},
     {"RAND_pseudo_bytes",   PySSL_RAND_pseudo_bytes, METH_VARARGS,
      PySSL_RAND_pseudo_bytes_doc},
+#ifdef HAVE_RAND_EGD
     {"RAND_egd",            PySSL_RAND_egd, METH_VARARGS,
      PySSL_RAND_egd_doc},
+#endif
     {"RAND_status",         (PyCFunction)PySSL_RAND_status, METH_NOARGS,
      PySSL_RAND_status_doc},
 #endif
@@ -4049,8 +4071,10 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "PROTOCOL_SSLv2",
                             PY_SSL_VERSION_SSL2);
 #endif
+#ifndef OPENSSL_NO_SSL3
     PyModule_AddIntConstant(m, "PROTOCOL_SSLv3",
                             PY_SSL_VERSION_SSL3);
+#endif
     PyModule_AddIntConstant(m, "PROTOCOL_SSLv23",
                             PY_SSL_VERSION_SSL23);
     PyModule_AddIntConstant(m, "PROTOCOL_TLSv1",

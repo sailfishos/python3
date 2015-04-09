@@ -13,12 +13,16 @@ from .tasks import coroutine
 
 
 class QueueEmpty(Exception):
-    'Exception raised by Queue.get(block=0)/get_nowait().'
+    """Exception raised when Queue.get_nowait() is called on a Queue object
+    which is empty.
+    """
     pass
 
 
 class QueueFull(Exception):
-    'Exception raised by Queue.put(block=0)/put_nowait().'
+    """Exception raised when the Queue.put_nowait() method is called on a Queue
+    object which is full.
+    """
     pass
 
 
@@ -105,14 +109,16 @@ class Queue:
         if self._maxsize <= 0:
             return False
         else:
-            return self.qsize() == self._maxsize
+            return self.qsize() >= self._maxsize
 
     @coroutine
     def put(self, item):
         """Put an item into the queue.
 
-        If you yield from put(), wait until a free slot is available
-        before adding item.
+        Put an item into the queue. If the queue is full, wait until a free
+        slot is available before adding item.
+
+        This method is a coroutine.
         """
         self._consume_done_getters()
         if self._getters:
@@ -124,9 +130,11 @@ class Queue:
             # Use _put and _get instead of passing item straight to getter, in
             # case a subclass has logic that must run (e.g. JoinableQueue).
             self._put(item)
+
+            # getter cannot be cancelled, we just removed done getters
             getter.set_result(self._get())
 
-        elif self._maxsize > 0 and self._maxsize == self.qsize():
+        elif self._maxsize > 0 and self._maxsize <= self.qsize():
             waiter = futures.Future(loop=self._loop)
 
             self._putters.append((item, waiter))
@@ -150,9 +158,11 @@ class Queue:
             # Use _put and _get instead of passing item straight to getter, in
             # case a subclass has logic that must run (e.g. JoinableQueue).
             self._put(item)
+
+            # getter cannot be cancelled, we just removed done getters
             getter.set_result(self._get())
 
-        elif self._maxsize > 0 and self._maxsize == self.qsize():
+        elif self._maxsize > 0 and self._maxsize <= self.qsize():
             raise QueueFull
         else:
             self._put(item)
@@ -161,7 +171,9 @@ class Queue:
     def get(self):
         """Remove and return an item from the queue.
 
-        If you yield from get(), wait until a item is available.
+        If queue is empty, wait until an item is available.
+
+        This method is a coroutine.
         """
         self._consume_done_putters()
         if self._putters:
@@ -173,7 +185,7 @@ class Queue:
             # run, we need to defer the put for a tick to ensure that
             # getters and putters alternate perfectly. See
             # ChannelTest.test_wait.
-            self._loop.call_soon(putter.set_result, None)
+            self._loop.call_soon(putter._set_result_unless_cancelled, None)
 
             return self._get()
 
@@ -196,6 +208,8 @@ class Queue:
             item, putter = self._putters.popleft()
             self._put(item)
             # Wake putter on next tick.
+
+            # getter cannot be cancelled, we just removed done putters
             putter.set_result(None)
 
             return self._get()
