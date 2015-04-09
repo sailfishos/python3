@@ -345,7 +345,7 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/site-packages/pip*.dist-info
 %{sitedir}/site-packages/setuptools
 %{sitedir}/site-packages/setuptools*.dist-info
-%{sitedir}/site-packages/pkg_resources.py
+%{sitedir}/site-packages/pkg_resources
 %{sitedir}/site-packages/easy_install.py
 %{sitedir}/site-packages/_markerlib
 # executables
