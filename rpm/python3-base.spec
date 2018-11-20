@@ -36,6 +36,7 @@ Version:        3.4.3
 Release:        0
 Source:         %{name}-%{version}.tar.gz
 Patch0:         skip-sem-test.patch
+Patch1:         no-getentropy.diff
 
 %define         python_version  3.4
 %define         python_version_abitag   34
@@ -116,10 +117,13 @@ other applications.
 %setup -q
 
 # skip-sem-test.patch
-# Disables semaphore test. OBS arm build environment doesn't have 
+# Disables semaphore test. OBS arm build environment doesn't have
 # /dev/shm mounted, so the test fails, crippling multiprocessing
 # support for real devices.
 %patch0 -p1
+
+# Fix random.c not to use unsupported getentropy()
+%patch1 -p1
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
