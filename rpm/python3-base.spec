@@ -34,7 +34,7 @@ License:        Python-2.0
 Group:          Development/Languages/Python
 Version:        3.4.3
 Release:        0
-Source:         %{name}-%{version}.tar.gz
+Source0:        %{name}-%{version}.tar.gz
 Patch0:         skip-sem-test.patch
 Patch1:         no-getentropy.diff
 
@@ -114,7 +114,7 @@ other applications.
 
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}/upstream
 
 # skip-sem-test.patch
 # Disables semaphore test. OBS arm build environment doesn't have
