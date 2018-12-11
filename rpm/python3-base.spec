@@ -122,6 +122,15 @@ This package contains libpython shared library for embedding in
 other applications.
 
 
+%package -n python3-doc
+Summary:        Documentation for %{name}
+Group:          Documentation
+Requires:       python3-base = %{version}
+
+%description -n python3-doc
+This package provides man pages for %{name}.
+
+
 %prep
 %setup -q -n %{name}-%{version}/upstream
 
@@ -197,10 +206,12 @@ ln -sf python%{python_version} ${RPM_BUILD_ROOT}%{_bindir}/python3
 # replace duplicate .pyo/.pyc with hardlinks
 %fdupes $RPM_BUILD_ROOT/%{sitedir}
 
+# remove extra copy of license text
+rm -f $RPM_BUILD_ROOT/%{sitedir}/LICENSE.txt
+
 # documentation
 export PDOCS=${RPM_BUILD_ROOT}%{_docdir}/%{name}
 install -d -m 755 $PDOCS
-install -c -m 644 LICENSE                           $PDOCS/
 install -c -m 644 README.rst                        $PDOCS/
 
 # remove .exe files
@@ -208,6 +219,12 @@ find $RPM_BUILD_ROOT%{sitedir}/ -type f -name '*.exe' -delete
 
 %clean
 rm -rf $RPM_BUILD_ROOT
+
+%files -n python3-doc
+%docdir %{_docdir}/%{name}
+%{_docdir}/%{name}/README.rst
+%{_mandir}/man1/python3.1*
+%{_mandir}/man1/python%{python_version}.1*
 
 %post -n libpython%{so_version} -p /sbin/ldconfig
 
@@ -240,12 +257,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644, root, root, 755)
-# docs
-%dir %{_docdir}/%{name}
-%doc %{_docdir}/%{name}/README.rst
-%doc %{_docdir}/%{name}/LICENSE
-%doc %{_mandir}/man1/python3.1*
-%doc %{_mandir}/man1/python%{python_version}.1*
+%license LICENSE
 # makefile etc
 # %{sitedir}/config-%{python_abi}-%{platform_triplet}
 %{_prefix}/include/python%{python_abi}/pyconfig.h
