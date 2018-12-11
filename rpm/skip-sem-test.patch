@@ -1,7 +1,6 @@
-diff -pubr python3.orig/configure.ac python3/configure.ac
---- python3.orig/configure.ac	2013-12-27 04:26:48.948754013 +0000
-+++ python3/configure.ac	2013-12-27 04:34:36.628761030 +0000
-@@ -3792,7 +3792,7 @@ int main(void) {
+--- python3.orig/configure.ac	2019-01-08 11:07:29.160111732 +0200
++++ python3/configure.ac	2019-01-08 11:07:11.843014000 +0200
+@@ -4570,7 +4570,7 @@ int main(void) {
  }
  ]])],
  [ac_cv_posix_semaphores_enabled=yes],
@@ -10,7 +9,7 @@ diff -pubr python3.orig/configure.ac python3/configure.ac
  [ac_cv_posix_semaphores_enabled=yes])
  )
  AC_MSG_RESULT($ac_cv_posix_semaphores_enabled)
-@@ -3828,8 +3828,8 @@ int main(void){
+@@ -4606,8 +4606,8 @@ int main(void){
  }
  ]])],
  [ac_cv_broken_sem_getvalue=no],
