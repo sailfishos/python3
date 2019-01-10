@@ -26,22 +26,33 @@ BuildRequires:  zlib-devel
 BuildRequires:  sqlite-devel
 BuildRequires:  openssl-devel
 BuildRequires:  bzip2-devel
+BuildRequires:  xz-devel
 BuildRequires:  readline-devel
 BuildRequires:  python
+BuildRequires:  glibc-headers
+BuildRequires:  libffi-devel
+BuildRequires:  db4-devel
+BuildRequires:  gdbm-devel
+BuildRequires:  libuuid-devel
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python-2.0
 Group:          Development/Languages/Python
-Version:        3.4.3
+Version:        3.7.2
 Release:        0
-Source:         %{name}-%{version}.tar.gz
+Source0:        %{name}-%{version}.tar.gz
 Patch0:         skip-sem-test.patch
-Patch1:         no-getentropy.diff
 
-%define         python_version  3.4
-%define         python_version_abitag   34
-%define         python_version_soname   3_4
+%define         python_version  3.7
+%define         python_version_abitag   37
+%define         python_version_soname   3_7
 %define         sitedir         %{_libdir}/python%{python_version}
+
+# Some files are named so that they have this platform triplet
+%if %{_arch} == arm
+%define armsuffix hf
+%endif
+%define		platform_triplet %{_arch}-%{_os}%{?_gnu}%{?armsuffix}
 
 # three possible ABI kinds: m - pymalloc, d - debug build
 # see PEP 3149
@@ -51,13 +62,13 @@ Patch1:         no-getentropy.diff
 # soname ABI tag defined in PEP 3149
 %define         abi_tag %{python_version_abitag}%{abi_kind}
 %define         so_version %{python_version_soname}%{abi_kind}1_0
-%define dynlib() %{sitedir}/lib-dynload/%{1}.cpython-%{abi_tag}.so
+%define dynlib() %{sitedir}/lib-dynload/%{1}.cpython-%{abi_tag}-%{platform_triplet}.so
+
+Requires:       libpython%{so_version} = %{version}
 
 %description
 Python is an interpreted, object-oriented programming language, and is
-often compared to Tcl, Perl, Scheme, or Java.  You can find an overview
-of Python in the documentation and tutorials included in the python-doc
-(HTML) or python-doc-pdf (PDF) packages.
+often compared to Tcl, Perl, Scheme, or Java.
 
 If you want to install third party modules using distutils, you need to
 install python-devel package.
@@ -88,7 +99,7 @@ package up to version 2.2.2.
 
 
 %package -n python3-testsuite
-Requires:       python3 = %{version}
+Requires:       python3-base = %{version}
 Summary:        Unit tests for Python and its standard library
 Group:          Development/Languages/Python
 
@@ -101,29 +112,33 @@ They are a documented part of stdlib, as a module 'test'.
 %package -n libpython%{so_version}
 Summary:        Python Interpreter shared library
 Group:          Development/Languages/Python
-Requires:       python3-base = %{version}
+Obsoletes:      libpython3_4m1_0
 
 %description -n libpython%{so_version}
 Python is an interpreted, object-oriented programming language, and is
-often compared to Tcl, Perl, Scheme, or Java.  You can find an overview
-of Python in the documentation and tutorials included in the python-doc
-(HTML) or python-doc-pdf (PDF) packages.
+often compared to Tcl, Perl, Scheme, or Java.
 
 This package contains libpython shared library for embedding in
 other applications.
 
 
+%package -n python3-doc
+Summary:        Documentation for %{name}
+Group:          Documentation
+Requires:       python3-base = %{version}
+
+%description -n python3-doc
+This package provides man pages for %{name}.
+
+
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}/upstream
 
 # skip-sem-test.patch
 # Disables semaphore test. OBS arm build environment doesn't have
 # /dev/shm mounted, so the test fails, crippling multiprocessing
 # support for real devices.
 %patch0 -p1
-
-# Fix random.c not to use unsupported getentropy()
-%patch1 -p1
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
@@ -144,7 +159,6 @@ touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
     --mandir=%{_mandir} \
     --docdir=%{_docdir}/python \
     --enable-ipv6 \
-    --with-fpectl \
     --enable-shared
 
 LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH \
@@ -168,7 +182,7 @@ make \
 # remove .a
 find ${RPM_BUILD_ROOT} -name "*.a" -exec rm {} ";"
 
-# remove the rpm buildroot form the install record files
+# remove the rpm buildroot from the install record files
 find ${RPM_BUILD_ROOT} -name 'RECORD' -print0 | \
     xargs -0 sed -i -e "s#${RPM_BUILD_ROOT}##g"
 
@@ -192,14 +206,25 @@ ln -sf python%{python_version} ${RPM_BUILD_ROOT}%{_bindir}/python3
 # replace duplicate .pyo/.pyc with hardlinks
 %fdupes $RPM_BUILD_ROOT/%{sitedir}
 
+# remove extra copy of license text
+rm -f $RPM_BUILD_ROOT/%{sitedir}/LICENSE.txt
+
 # documentation
 export PDOCS=${RPM_BUILD_ROOT}%{_docdir}/%{name}
 install -d -m 755 $PDOCS
-install -c -m 644 LICENSE                           $PDOCS/
-install -c -m 644 README                            $PDOCS/
+install -c -m 644 README.rst                        $PDOCS/
+
+# remove .exe files
+find $RPM_BUILD_ROOT%{sitedir}/ -type f -name '*.exe' -delete
 
 %clean
 rm -rf $RPM_BUILD_ROOT
+
+%files -n python3-doc
+%docdir %{_docdir}/%{name}
+%{_docdir}/%{name}/README.rst
+%{_mandir}/man1/python3.1*
+%{_mandir}/man1/python%{python_version}.1*
 
 %post -n libpython%{so_version} -p /sbin/ldconfig
 
@@ -232,23 +257,16 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644, root, root, 755)
-# docs
-%dir %{_docdir}/%{name}
-%doc %{_docdir}/%{name}/README
-%doc %{_docdir}/%{name}/LICENSE
-%doc %{_mandir}/man1/python3.1*
-%doc %{_mandir}/man1/python%{python_version}.1*
+%license LICENSE
 # makefile etc
-%{sitedir}/config-%{python_abi}
+# %{sitedir}/config-%{python_abi}-%{platform_triplet}
 %{_prefix}/include/python%{python_abi}/pyconfig.h
 # binary parts
 %dir %{sitedir}/lib-dynload
 %{dynlib array}
-#%{dynlib atexit}
 %{dynlib audioop}
 %{dynlib binascii}
 %{dynlib _bisect}
-#%{dynlib _bz2}
 %{dynlib cmath}
 %{dynlib _codecs_cn}
 %{dynlib _codecs_hk}
@@ -267,7 +285,7 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _heapq}
 %{dynlib _json}
 %{dynlib _lsprof}
-#%{dynlib _lzma}
+%{dynlib _lzma}
 %{dynlib math}
 %{dynlib mmap}
 %{dynlib _multibytecodec}
@@ -285,7 +303,6 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _struct}
 %{dynlib syslog}
 %{dynlib termios}
-%{dynlib time}
 %{dynlib _testbuffer}
 %{dynlib unicodedata}
 %{dynlib zlib}
@@ -297,22 +314,30 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _ssl}
 %{dynlib readline}
 %{dynlib pyexpat}
+%{dynlib _queue}
+%{dynlib _dbm}
+%{dynlib _gdbm}
+%{dynlib _uuid}
+%{dynlib _testmultiphase}
+%{dynlib _xxtestfuzz}
 # hashlib fallback modules
 %{dynlib _md5}
 %{dynlib _sha1}
 %{dynlib _sha256}
 %{dynlib _sha512}
+%{dynlib _sha3}
 %{dynlib xxlimited}
 # new in python 3.4
+%{dynlib _asyncio}
 %{dynlib _opcode}
 %{dynlib _testimportmultiple}
+# new in python 3.6
+%{dynlib _blake2}
+# new in python 3.7
+%{dynlib _contextvars}
 # python parts
-%dir /usr/lib/python%{python_version}
-%dir /usr/lib/python%{python_version}/site-packages
-%dir /usr/lib/python%{python_version}/site-packages/__pycache__
 %dir %{sitedir}
 %dir %{sitedir}/site-packages
-%dir %{sitedir}/site-packages/__pycache__
 %exclude %{sitedir}/*/test
 %{sitedir}/*.*
 %{sitedir}/ctypes
@@ -330,7 +355,6 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/lib2to3
 %{sitedir}/logging
 %{sitedir}/multiprocessing
-%{sitedir}/plat-*
 %{sitedir}/pydoc_data
 %{sitedir}/unittest
 %{sitedir}/urllib
@@ -339,7 +363,7 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/sqlite3
 %{sitedir}/dbm
 %{sitedir}/curses
-%{sitedir}/site-packages/README
+%{sitedir}/site-packages/README.txt
 %{sitedir}/__pycache__
 # new in python 3.4
 %{sitedir}/asyncio
@@ -351,16 +375,16 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/site-packages/setuptools*.dist-info
 %{sitedir}/site-packages/pkg_resources
 %{sitedir}/site-packages/easy_install.py
-%{sitedir}/site-packages/_markerlib
 # executables
-%attr(755, root, root) %{_bindir}/pydoc3
 %attr(755, root, root) %{_bindir}/pydoc%{python_version}
 %attr(755, root, root) %{_bindir}/python%{python_abi}
 %attr(755, root, root) %{_bindir}/python%{python_version}
-%attr(755, root, root) %{_bindir}/python3
-%attr(755, root, root) %{_bindir}/pyvenv
 %attr(755, root, root) %{_bindir}/pyvenv-%{python_version}
 # new in python 3.4
 %attr(755, root, root) %{_bindir}/easy_install-%{python_version}
 %attr(755, root, root) %{_bindir}/pip3
 %attr(755, root, root) %{_bindir}/pip%{python_version}
+# links to copy
+%{_bindir}/pydoc3
+%{_bindir}/python3
+%{_bindir}/pyvenv
