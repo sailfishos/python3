@@ -153,6 +153,11 @@ autoreconf -fi
 # prevent make from trying to rebuild asdl stuff, which requires existing python installation
 touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
 
+# Create Setup file and disable tkinter and nis
+cp Modules/Setup.dist Modules/Setup
+touch Modules/Setup
+echo -e "*disabled*\n_tkinter\nnis" >> Modules/Setup
+
 ./configure \
     --prefix=%{_prefix} \
     --libdir=%{_libdir} \
@@ -290,7 +295,6 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib mmap}
 %{dynlib _multibytecodec}
 %{dynlib _multiprocessing}
-%{dynlib nis}
 %{dynlib ossaudiodev}
 %{dynlib parser}
 %{dynlib _pickle}
