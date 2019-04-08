@@ -164,7 +164,8 @@ echo -e "*disabled*\n_tkinter\nnis" >> Modules/Setup
     --mandir=%{_mandir} \
     --docdir=%{_docdir}/python \
     --enable-ipv6 \
-    --enable-shared
+    --enable-shared \
+    --enable-optimizations
 
 LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH \
     make %{?_smp_mflags}
