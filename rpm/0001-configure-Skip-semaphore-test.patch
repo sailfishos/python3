@@ -1,0 +1,46 @@
+From 03ed7af831d75b7fac00c9605c9aa6c41c1c663e Mon Sep 17 00:00:00 2001
+From: David Greaves <david@dgreaves.com>
+Date: Fri, 12 Apr 2019 20:28:32 +0100
+Subject: [PATCH] [configure] Skip semaphore test.
+
+OBS's arm build environment doesn't have /dev/shm
+mounted (real devices do) so this fails, crippling
+multiprocessing support.
+
+Author: Mike Sheldon <elleo@gnu.org>  2013-12-27 04:37:11
+Committer: Thomas Perl <m@thp.io>  2013-12-27 08:06:55
+
+Signed-off-by: David Greaves <david.greaves@jolla.com>
+---
+ configure.ac | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index a7de901e08..f8da1db748 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -4570,7 +4570,7 @@ int main(void) {
+ }
+ ]])],
+ [ac_cv_posix_semaphores_enabled=yes],
+-[ac_cv_posix_semaphores_enabled=no],
++[ac_cv_posix_semaphores_enabled=yes],
+ [ac_cv_posix_semaphores_enabled=yes])
+ )
+ AC_MSG_RESULT($ac_cv_posix_semaphores_enabled)
+@@ -4606,8 +4606,8 @@ int main(void){
+ }
+ ]])],
+ [ac_cv_broken_sem_getvalue=no],
+-[ac_cv_broken_sem_getvalue=yes],
+-[ac_cv_broken_sem_getvalue=yes])
++[ac_cv_broken_sem_getvalue=no],
++[ac_cv_broken_sem_getvalue=no])
+ )
+ AC_MSG_RESULT($ac_cv_broken_sem_getvalue)
+ if test $ac_cv_broken_sem_getvalue = yes
+
+base-commit: 9a3ffc0492d1310ead9ce8f5ee678c26b20a338d
+-- 
+2.11.0
+

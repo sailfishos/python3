@@ -1,0 +1,8 @@
+# Used for tests
+addFilter("W: pem-certificate /usr/lib/python.*/test/.*")
+# Yes, it depends on python3-base
+addFilter("W: no-dependency-on python-base")
+# Ignore empty files in the test area
+addFilter("W: zero-length /usr/lib/.*/test/.*")
+# We don't mind about non executable .py scripts
+addFilter("W: non-executable-script /usr/lib/python")

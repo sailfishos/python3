@@ -41,7 +41,11 @@ Group:          Development/Languages/Python
 Version:        3.7.2
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
-Patch0:         skip-sem-test.patch
+# To rebuild or extend the patch set apply these patches to upstream
+# on a branch called sfos/<python-tag> using base provided in the
+# first patch, rebase and regenerate using:
+#  cd upstream && git format-patch --base=<python-tag> <python-tag>..sfos/<python-tag> -o ../rpm/
+Patch0:         0001-configure-Skip-semaphore-test.patch
 
 %define         python_version  3.7
 %define         python_version_abitag   37
