@@ -32,7 +32,6 @@ BuildRequires:  python
 BuildRequires:  glibc-headers
 BuildRequires:  libffi-devel
 BuildRequires:  db4-devel
-BuildRequires:  gdbm-devel
 BuildRequires:  libuuid-devel
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
@@ -169,7 +168,8 @@ echo -e "*disabled*\n_tkinter\nnis" >> Modules/Setup
     --docdir=%{_docdir}/python \
     --enable-ipv6 \
     --enable-shared \
-    --enable-optimizations
+    --enable-optimizations \
+    --with-dbmliborder=bdb
 
 LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH \
     make %{?_smp_mflags}
@@ -325,7 +325,6 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib pyexpat}
 %{dynlib _queue}
 %{dynlib _dbm}
-%{dynlib _gdbm}
 %{dynlib _uuid}
 %{dynlib _testmultiphase}
 %{dynlib _xxtestfuzz}
