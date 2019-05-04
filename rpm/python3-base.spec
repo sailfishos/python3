@@ -40,6 +40,7 @@ Group:          Development/Languages/Python
 Version:        3.7.2
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
+Source1:        python3-rpmlintrc
 # To rebuild or extend the patch set apply these patches to upstream
 # on a branch called sfos/<python-tag> using base provided in the
 # first patch, rebase and regenerate using:
@@ -179,8 +180,8 @@ LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH \
 find . -path "./Parser" -prune \
     -o -path "./Python/makeopcodetargets.py" -prune \
     -o -name '*.py' -type f -print0 \
-| xargs -0          grep -lE '^#! *(/usr/.*bin/(env +)?)?python' \
-| xargs             sed -r -i -e '1s@^#![[:space:]]*(/usr/(local/)?bin/(env +)?)?python([0-9]+(\.[0-9]+)?)?[m]?@#!/usr/bin/python3@'
+| xargs -r -0 grep -lE '^#! *(/usr/.*bin/(env +)?)?python' \
+| xargs -r sed -r -i -e '1s@^#![[:space:]]*(/usr/(local/)?bin/(env +)?)?python([0-9]+(\.[0-9]+)?)?[m]?@#!/usr/bin/python3@'
 # the grep inbetween makes it much faster
 
 # install it
@@ -194,7 +195,7 @@ find ${RPM_BUILD_ROOT} -name "*.a" -exec rm {} ";"
 
 # remove the rpm buildroot from the install record files
 find ${RPM_BUILD_ROOT} -name 'RECORD' -print0 | \
-    xargs -0 sed -i -e "s#${RPM_BUILD_ROOT}##g"
+    xargs -r -0 sed -i -e "s#${RPM_BUILD_ROOT}##g"
 
 # install "site-packages" and __pycache__ for third parties
 install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages
@@ -269,7 +270,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644, root, root, 755)
 %license LICENSE
 # makefile etc
-# %{sitedir}/config-%{python_abi}-%{platform_triplet}
+# %%{sitedir}/config-%%{python_abi}-%%{platform_triplet}
 %{_prefix}/include/python%{python_abi}/pyconfig.h
 # binary parts
 %dir %{sitedir}/lib-dynload
