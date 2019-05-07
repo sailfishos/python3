@@ -30,9 +30,6 @@ BuildRequires:  xz-devel
 BuildRequires:  readline-devel
 BuildRequires:  python
 BuildRequires:  glibc-headers
-BuildRequires:  libffi-devel
-BuildRequires:  db4-devel
-BuildRequires:  libuuid-devel
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python-2.0
@@ -40,6 +37,7 @@ Group:          Development/Languages/Python
 Version:        3.7.2
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
+Source1:        python3-rpmlintrc
 # To rebuild or extend the patch set apply these patches to upstream
 # on a branch called sfos/<python-tag> using base provided in the
 # first patch, rebase and regenerate using:
@@ -156,10 +154,18 @@ autoreconf -fi
 # prevent make from trying to rebuild asdl stuff, which requires existing python installation
 touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
 
-# Create Setup file and disable tkinter and nis
+# Create Setup file and disable _tkinter, nis, _dbm, _gdbm, _uuid and _ctypes
 cp Modules/Setup.dist Modules/Setup
 touch Modules/Setup
-echo -e "*disabled*\n_tkinter\nnis" >> Modules/Setup
+{
+    echo '*disabled*'
+    echo '_tkinter'
+    echo 'nis'
+    echo '_dbm'
+    echo '_gdbm'
+    echo '_uuid'
+    echo '_ctypes'
+} >> Modules/Setup
 
 ./configure \
     --prefix=%{_prefix} \
@@ -169,7 +175,9 @@ echo -e "*disabled*\n_tkinter\nnis" >> Modules/Setup
     --enable-ipv6 \
     --enable-shared \
     --enable-optimizations \
-    --with-dbmliborder=bdb
+    --with-dbmliborder=bdb \
+    --with-system-ffi=no \
+    --without-ensurepip
 
 LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH \
     make %{?_smp_mflags}
@@ -179,8 +187,8 @@ LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH \
 find . -path "./Parser" -prune \
     -o -path "./Python/makeopcodetargets.py" -prune \
     -o -name '*.py' -type f -print0 \
-| xargs -0          grep -lE '^#! *(/usr/.*bin/(env +)?)?python' \
-| xargs             sed -r -i -e '1s@^#![[:space:]]*(/usr/(local/)?bin/(env +)?)?python([0-9]+(\.[0-9]+)?)?[m]?@#!/usr/bin/python3@'
+| xargs -r -0 grep -lE '^#! *(/usr/.*bin/(env +)?)?python' \
+| xargs -r sed -r -i -e '1s@^#![[:space:]]*(/usr/(local/)?bin/(env +)?)?python([0-9]+(\.[0-9]+)?)?[m]?@#!/usr/bin/python3@'
 # the grep inbetween makes it much faster
 
 # install it
@@ -194,7 +202,7 @@ find ${RPM_BUILD_ROOT} -name "*.a" -exec rm {} ";"
 
 # remove the rpm buildroot from the install record files
 find ${RPM_BUILD_ROOT} -name 'RECORD' -print0 | \
-    xargs -0 sed -i -e "s#${RPM_BUILD_ROOT}##g"
+    xargs -r -0 sed -i -e "s#${RPM_BUILD_ROOT}##g"
 
 # install "site-packages" and __pycache__ for third parties
 install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages
@@ -269,7 +277,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644, root, root, 755)
 %license LICENSE
 # makefile etc
-# %{sitedir}/config-%{python_abi}-%{platform_triplet}
+# %%{sitedir}/config-%%{python_abi}-%%{platform_triplet}
 %{_prefix}/include/python%{python_abi}/pyconfig.h
 # binary parts
 %dir %{sitedir}/lib-dynload
@@ -286,7 +294,6 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _codecs_tw}
 %{dynlib _crypt}
 %{dynlib _csv}
-%{dynlib _ctypes}
 %{dynlib _datetime}
 %{dynlib _decimal}
 %{dynlib _elementtree}
@@ -324,8 +331,6 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib readline}
 %{dynlib pyexpat}
 %{dynlib _queue}
-%{dynlib _dbm}
-%{dynlib _uuid}
 %{dynlib _testmultiphase}
 %{dynlib _xxtestfuzz}
 # hashlib fallback modules
@@ -377,21 +382,11 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/asyncio
 %{sitedir}/ensurepip
 %{sitedir}/site-packages/__pycache__
-%{sitedir}/site-packages/pip
-%{sitedir}/site-packages/pip*.dist-info
-%{sitedir}/site-packages/setuptools
-%{sitedir}/site-packages/setuptools*.dist-info
-%{sitedir}/site-packages/pkg_resources
-%{sitedir}/site-packages/easy_install.py
 # executables
 %attr(755, root, root) %{_bindir}/pydoc%{python_version}
 %attr(755, root, root) %{_bindir}/python%{python_abi}
 %attr(755, root, root) %{_bindir}/python%{python_version}
 %attr(755, root, root) %{_bindir}/pyvenv-%{python_version}
-# new in python 3.4
-%attr(755, root, root) %{_bindir}/easy_install-%{python_version}
-%attr(755, root, root) %{_bindir}/pip3
-%attr(755, root, root) %{_bindir}/pip%{python_version}
 # links to copy
 %{_bindir}/pydoc3
 %{_bindir}/python3
