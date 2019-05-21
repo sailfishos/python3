@@ -174,7 +174,6 @@ touch Modules/Setup
     --docdir=%{_docdir}/python \
     --enable-ipv6 \
     --enable-shared \
-    --enable-optimizations \
     --with-dbmliborder=bdb \
     --with-system-ffi=no \
     --without-ensurepip
