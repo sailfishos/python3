@@ -27,7 +27,6 @@ BuildRequires:  sqlite-devel
 BuildRequires:  openssl-devel
 BuildRequires:  bzip2-devel
 BuildRequires:  xz-devel
-BuildRequires:  readline-devel
 BuildRequires:  python
 BuildRequires:  glibc-headers
 BuildRequires:  libffi-devel
@@ -165,6 +164,9 @@ _gdbm
 nis
 _tkinter
 _uuid
+readline
+_curses
+_curses_panel
 EOF
 
 ./configure \
@@ -323,11 +325,8 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib zlib}
 %{dynlib _sqlite3}
 %{dynlib _bz2}
-%{dynlib _curses}
-%{dynlib _curses_panel}
 %{dynlib _hashlib}
 %{dynlib _ssl}
-%{dynlib readline}
 %{dynlib pyexpat}
 %{dynlib _queue}
 %{dynlib _testmultiphase}
