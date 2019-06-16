@@ -27,7 +27,6 @@ BuildRequires:  sqlite-devel
 BuildRequires:  openssl-devel
 BuildRequires:  bzip2-devel
 BuildRequires:  xz-devel
-BuildRequires:  python
 BuildRequires:  glibc-headers
 BuildRequires:  libffi-devel
 Url:            http://www.python.org/
