@@ -131,6 +131,24 @@ Requires:       python3-base = %{version}
 This package provides man pages for %{name}.
 
 
+%package -n python3-pip
+Requires:       python3-base = %{version}
+Summary:        Pip package manager
+Group:          Development/Languages/Python
+
+%description -n python3-pip
+The pip package manager.
+
+
+%package -n python3-setuptools
+Requires:       python3-base = %{version}
+Summary:        Setup tools for package distribution
+Group:          Development/Languages/Python
+
+%description -n python3-setuptools
+The setup python tool to manage package distribution and installation.
+
+
 %prep
 %setup -q -n %{name}-%{version}/upstream
 
@@ -207,6 +225,16 @@ find ${RPM_BUILD_ROOT} -name 'RECORD' -print0 | \
 install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages
 install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages/__pycache__
 
+# if pip is present on the system, ensurepip will not do anything
+# so copying pip related-files by hand from the system.
+if [ -f /usr/bin/pip3 ] ; then
+    install /usr/bin/easy_install-%{python_version} /usr/bin/pip3 /usr/bin/pip%{python_version} ${RPM_BUILD_ROOT}%{_bindir}
+    install /usr/lib/python%{python_version}/site-packages/easy_install.py ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+    cp -rp /usr/lib/python%{python_version}/site-packages/pip* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+    cp -rp /usr/lib/python%{python_version}/site-packages/setuptools* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+    cp -rp /usr/lib/python%{python_version}/site-packages/pkg_resources ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+fi
+
 # Idle (Tk-based IDE, not useful on mobile)
 rm -f \
     $RPM_BUILD_ROOT%{_bindir}/idle3 \
@@ -271,6 +299,28 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/*/test
 %{dynlib _ctypes_test}
 %{dynlib _testcapi}
+
+# Cannot be packaged if pip is already installed on the system
+# because ensurepip script do not install anything if pip is found
+# in the path.
+%files -n python3-pip
+%defattr(644, root, root, 755)
+%{sitedir}/ensurepip
+%{sitedir}/site-packages/pip
+%{sitedir}/site-packages/pip*.dist-info
+# new in python 3.4
+%attr(755, root, root) %{_bindir}/pip3
+%attr(755, root, root) %{_bindir}/pip%{python_version}
+
+%files -n python3-setuptools
+%defattr(644, root, root, 755)
+%{sitedir}/site-packages/setuptools
+%{sitedir}/site-packages/setuptools*.dist-info
+%{sitedir}/site-packages/pkg_resources
+%{sitedir}/site-packages/easy_install.py
+%{sitedir}/site-packages/__pycache__/easy_install*
+# new in python 3.4
+%attr(755, root, root) %{_bindir}/easy_install-%{python_version}
 
 %files
 %defattr(644, root, root, 755)
@@ -377,23 +427,13 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/__pycache__
 # new in python 3.4
 %{sitedir}/asyncio
-%{sitedir}/ensurepip
 %{sitedir}/site-packages/__pycache__
-%{sitedir}/site-packages/pip
-%{sitedir}/site-packages/pip*.dist-info
-%{sitedir}/site-packages/setuptools
-%{sitedir}/site-packages/setuptools*.dist-info
-%{sitedir}/site-packages/pkg_resources
-%{sitedir}/site-packages/easy_install.py
+%exclude %{sitedir}/site-packages/__pycache__/easy_install*
 # executables
 %attr(755, root, root) %{_bindir}/pydoc%{python_version}
 %attr(755, root, root) %{_bindir}/python%{python_abi}
 %attr(755, root, root) %{_bindir}/python%{python_version}
 %attr(755, root, root) %{_bindir}/pyvenv-%{python_version}
-# new in python 3.4
-%attr(755, root, root) %{_bindir}/easy_install-%{python_version}
-%attr(755, root, root) %{_bindir}/pip3
-%attr(755, root, root) %{_bindir}/pip%{python_version}
 # links to copy
 %{_bindir}/pydoc3
 %{_bindir}/python3
