@@ -33,7 +33,7 @@ Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python-2.0
 Group:          Development/Languages/Python
-Version:        3.7.2
+Version:        3.8.1
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc
@@ -43,9 +43,9 @@ Source1:        python3-rpmlintrc
 #  cd upstream && git format-patch --base=<python-tag> <python-tag>..sfos/<python-tag> -o ../rpm/
 Patch0:         0001-configure-Skip-semaphore-test.patch
 
-%define         python_version  3.7
-%define         python_version_abitag   37
-%define         python_version_soname   3_7
+%define         python_version  3.8
+%define         python_version_abitag   38
+%define         python_version_soname   3_8
 %define         sitedir         %{_libdir}/python%{python_version}
 
 # Some files are named so that they have this platform triplet
@@ -54,15 +54,9 @@ Patch0:         0001-configure-Skip-semaphore-test.patch
 %endif
 %define		platform_triplet %{_arch}-%{_os}%{?_gnu}%{?armsuffix}
 
-# three possible ABI kinds: m - pymalloc, d - debug build
-# see PEP 3149
-%define         abi_kind m
-# python ABI version - used in some file names
-%define         python_abi %{python_version}%{abi_kind}
 # soname ABI tag defined in PEP 3149
-%define         abi_tag %{python_version_abitag}%{abi_kind}
-%define         so_version %{python_version_soname}%{abi_kind}1_0
-%define dynlib() %{sitedir}/lib-dynload/%{1}.cpython-%{abi_tag}-%{platform_triplet}.so
+%define         so_version %{python_version_soname}1_0
+%define dynlib() %{sitedir}/lib-dynload/%{1}.cpython-%{python_version_abitag}-%{platform_triplet}.so
 
 Requires:       libpython%{so_version} = %{version}
 
@@ -171,8 +165,7 @@ autoreconf -fi
 # prevent make from trying to rebuild asdl stuff, which requires existing python installation
 touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
 
-# Create Setup file and disable tkinter, nis and _gdbm
-cp Modules/Setup.dist Modules/Setup
+# Disable some modules
 touch Modules/Setup
 cat <<EOF >> Modules/Setup
 *disabled*
@@ -277,17 +270,16 @@ rm -rf $RPM_BUILD_ROOT
 
 %files -n libpython%{so_version}
 %defattr(644, root,root)
-%{_libdir}/libpython%{python_abi}.so.*
+%{_libdir}/libpython%{python_version}.so.*
 
 %files -n python3-devel
 %defattr(644, root, root, 755)
-%{_libdir}/libpython%{python_abi}.so
+%{_libdir}/libpython%{python_version}.so
 %{_libdir}/libpython3.so
 %{_libdir}/pkgconfig/*
-%{_prefix}/include/python%{python_abi}
-%exclude %{_prefix}/include/python%{python_abi}/pyconfig.h
+%{_prefix}/include/python%{python_version}
+%exclude %{_prefix}/include/python%{python_version}/pyconfig.h
 %defattr(755, root, root)
-%{_bindir}/python%{python_abi}-config
 %{_bindir}/python%{python_version}-config
 %{_bindir}/python3-config
 %{_bindir}/2to3
@@ -327,7 +319,7 @@ rm -rf $RPM_BUILD_ROOT
 %license LICENSE
 # makefile etc
 # %%{sitedir}/config-%%{python_abi}-%%{platform_triplet}
-%{_prefix}/include/python%{python_abi}/pyconfig.h
+%{_prefix}/include/python%{python_version}/pyconfig.h
 # binary parts
 %dir %{sitedir}/lib-dynload
 %{dynlib array}
@@ -395,6 +387,11 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _blake2}
 # new in python 3.7
 %{dynlib _contextvars}
+# new in python 3.8
+%{dynlib _posixshmem}
+%{dynlib _statistics}
+%{dynlib _testinternalcapi}
+%{dynlib _xxsubinterpreters}
 # python parts
 %dir %{sitedir}
 %dir %{sitedir}/site-packages
@@ -431,10 +428,7 @@ rm -rf $RPM_BUILD_ROOT
 %exclude %{sitedir}/site-packages/__pycache__/easy_install*
 # executables
 %attr(755, root, root) %{_bindir}/pydoc%{python_version}
-%attr(755, root, root) %{_bindir}/python%{python_abi}
 %attr(755, root, root) %{_bindir}/python%{python_version}
-%attr(755, root, root) %{_bindir}/pyvenv-%{python_version}
 # links to copy
 %{_bindir}/pydoc3
 %{_bindir}/python3
-%{_bindir}/pyvenv
