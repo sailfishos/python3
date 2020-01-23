@@ -42,6 +42,7 @@ Source1:        python3-rpmlintrc
 # first patch, rebase and regenerate using:
 #  cd upstream && git format-patch --base=<python-tag> <python-tag>..sfos/<python-tag> -o ../rpm/
 Patch0:         0001-configure-Skip-semaphore-test.patch
+Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
 
 %define         python_version  3.8
 %define         python_version_abitag   38
@@ -151,6 +152,8 @@ The setup python tool to manage package distribution and installation.
 # /dev/shm mounted, so the test fails, crippling multiprocessing
 # support for real devices.
 %patch0 -p1
+# Disable parallel compileall in make install.
+%patch1 -p1
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
