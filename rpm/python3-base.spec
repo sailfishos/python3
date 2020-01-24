@@ -76,8 +76,6 @@ Authors:
 
 %package -n python3-devel
 Requires:       %{name} = %{version}
-Provides:       python3-2to3 = %{version}
-Obsoletes:      python3-2to3 <= %{version}
 Summary:        Include Files and Libraries Mandatory for Building Python Modules
 Group:          Development/Languages/Python
 
@@ -277,11 +275,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %files -n python3-devel
 %defattr(644, root, root, 755)
+%{_libdir}/python%{python_version}/config-%{python_version}-%{platform_triplet}
 %{_libdir}/libpython%{python_version}.so
 %{_libdir}/libpython3.so
 %{_libdir}/pkgconfig/*
 %{_prefix}/include/python%{python_version}
-%exclude %{_prefix}/include/python%{python_version}/pyconfig.h
 %defattr(755, root, root)
 %{_bindir}/python%{python_version}-config
 %{_bindir}/python3-config
@@ -292,6 +290,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(644, root, root, 755)
 %{sitedir}/test
 %{sitedir}/*/test
+%{sitedir}/*/tests
 %{dynlib _ctypes_test}
 %{dynlib _testcapi}
 
@@ -320,9 +319,6 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(644, root, root, 755)
 %license LICENSE
-# makefile etc
-# %%{sitedir}/config-%%{python_abi}-%%{platform_triplet}
-%{_prefix}/include/python%{python_version}/pyconfig.h
 # binary parts
 %dir %{sitedir}/lib-dynload
 %{dynlib array}
@@ -399,7 +395,8 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{sitedir}
 %dir %{sitedir}/site-packages
 %exclude %{sitedir}/*/test
-%{sitedir}/*.*
+%exclude %{sitedir}/*/tests
+%{sitedir}/*.py
 %{sitedir}/ctypes
 %{sitedir}/collections
 %{sitedir}/concurrent
