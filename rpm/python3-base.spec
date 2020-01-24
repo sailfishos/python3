@@ -33,7 +33,7 @@ Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python-2.0
 Group:          Development/Languages/Python
-Version:        3.7.2
+Version:        3.7.6
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc
