@@ -32,7 +32,6 @@ BuildRequires:  libffi-devel
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python-2.0
-Group:          Development/Languages/Python
 Version:        3.8.1
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
@@ -77,7 +76,6 @@ Authors:
 %package -n python3-devel
 Requires:       %{name} = %{version}
 Summary:        Include Files and Libraries Mandatory for Building Python Modules
-Group:          Development/Languages/Python
 
 %description -n python3-devel
 The Python programming language's interpreter can be extended with
@@ -92,9 +90,8 @@ package up to version 2.2.2.
 
 
 %package -n python3-testsuite
-Requires:       python3-base = %{version}
+Requires:       %{name} = %{version}
 Summary:        Unit tests for Python and its standard library
-Group:          Development/Languages/Python
 
 %description -n python3-testsuite
 Unit tests that are useful for verifying integrity and functionality
@@ -104,7 +101,6 @@ They are a documented part of stdlib, as a module 'test'.
 
 %package -n libpython%{so_version}
 Summary:        Python Interpreter shared library
-Group:          Development/Languages/Python
 Obsoletes:      libpython3_4m1_0
 
 %description -n libpython%{so_version}
@@ -116,27 +112,24 @@ other applications.
 
 
 %package -n python3-doc
+Requires:       %{name} = %{version}
 Summary:        Documentation for %{name}
-Group:          Documentation
-Requires:       python3-base = %{version}
 
 %description -n python3-doc
 This package provides man pages for %{name}.
 
 
 %package -n python3-pip
-Requires:       python3-base = %{version}
+Requires:       %{name} = %{version}
 Summary:        Pip package manager
-Group:          Development/Languages/Python
 
 %description -n python3-pip
 The pip package manager.
 
 
 %package -n python3-setuptools
-Requires:       python3-base = %{version}
+Requires:       %{name} = %{version}
 Summary:        Setup tools for package distribution
-Group:          Development/Languages/Python
 
 %description -n python3-setuptools
 The setup python tool to manage package distribution and installation.
