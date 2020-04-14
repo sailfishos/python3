@@ -1,6 +1,5 @@
 #
-# Mer Python 3 spec file
-# https://build.merproject.org/project/show?project=mer-python3
+# SailfishOS Python 3 spec file
 #
 # adapted from: spec file for package python3-base
 # Copyright (c) 2013 SUSE LINUX Products GmbH, Nuernberg, Germany.
@@ -58,7 +57,7 @@ Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
 %define         so_version %{python_version_soname}1_0
 %define dynlib() %{sitedir}/lib-dynload/%{1}.cpython-%{python_version_abitag}-%{platform_triplet}.so
 
-Requires:       libpython%{so_version} = %{version}
+Requires:       python3-libs = %{version}-%{release}
 
 %description
 Python is an interpreted, object-oriented programming language, and is
@@ -99,11 +98,12 @@ of the installed Python interpreter and standard library.
 They are a documented part of stdlib, as a module 'test'.
 
 
-%package -n libpython%{so_version}
+%package -n python3-libs
 Summary:        Python Interpreter shared library
 Obsoletes:      libpython3_4m1_0
+Obsoletes:      libpython3_81_0
 
-%description -n libpython%{so_version}
+%description -n python3-libs
 Python is an interpreted, object-oriented programming language, and is
 often compared to Tcl, Perl, Scheme, or Java.
 
@@ -258,11 +258,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man1/python3.1*
 %{_mandir}/man1/python%{python_version}.1*
 
-%post -n libpython%{so_version} -p /sbin/ldconfig
+%post -n python3-libs -p /sbin/ldconfig
 
-%postun -n libpython%{so_version} -p /sbin/ldconfig
+%postun -n python3-libs -p /sbin/ldconfig
 
-%files -n libpython%{so_version}
+%files -n python3-libs
 %defattr(644, root,root)
 %{_libdir}/libpython%{python_version}.so.*
 
