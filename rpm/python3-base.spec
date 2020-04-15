@@ -79,8 +79,13 @@ Authors:
 
 %package -n python3-devel
 Requires:       %{name} = %{version}
-# https://bugzilla.redhat.com/show_bug.cgi?id=1410631
+# rpm-build needs python3-rpm-generators and python3-setuptools when python3-devel
+# is installed but not otherwise. Putting this conditional Requires in python3-devel
+# means that rpm-build does not have to know about python specific stuff.
+# See https://bugzilla.redhat.com/show_bug.cgi?id=1410631 for rpm-build discussion
+# and https://rpm.org/user_doc/boolean_dependencies.html for conditional Requires.
 Requires:       (python3-rpm-generators if rpm-build)
+Requires:       (python3-setuptools if rpm-build)
 Summary:        Include Files and Libraries Mandatory for Building Python Modules
 
 %description -n python3-devel
@@ -132,14 +137,6 @@ Summary:        Pip package manager
 
 %description -n python3-pip
 The pip package manager.
-
-
-%package -n python3-setuptools
-Requires:       %{name} = %{version}
-Summary:        Setup tools for package distribution
-
-%description -n python3-setuptools
-The setup python tool to manage package distribution and installation.
 
 
 %prep
@@ -305,16 +302,6 @@ rm -rf $RPM_BUILD_ROOT
 # new in python 3.4
 %attr(755, root, root) %{_bindir}/pip3
 %attr(755, root, root) %{_bindir}/pip%{python_version}
-
-%files -n python3-setuptools
-%defattr(644, root, root, 755)
-%{sitedir}/site-packages/setuptools
-%{sitedir}/site-packages/setuptools*.dist-info
-%{sitedir}/site-packages/pkg_resources
-%{sitedir}/site-packages/easy_install.py
-%{sitedir}/site-packages/__pycache__/easy_install*
-# new in python 3.4
-%attr(755, root, root) %{_bindir}/easy_install-%{python_version}
 
 %files
 %defattr(644, root, root, 755)
