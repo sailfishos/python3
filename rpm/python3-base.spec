@@ -57,6 +57,11 @@ Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
 %define         so_version %{python_version_soname}1_0
 %define dynlib() %{sitedir}/lib-dynload/%{1}.cpython-%{python_version_abitag}-%{platform_triplet}.so
 
+# Disable automatic bytecompilation. The python3 binary is not yet be
+# available in /usr/bin when Python is built. Also, the bytecompilation fails
+# on files that test invalid syntax.
+%global __os_install_post %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
+
 Requires:       python3-libs = %{version}-%{release}
 
 %description
