@@ -74,6 +74,8 @@ Authors:
 
 %package -n python3-devel
 Requires:       %{name} = %{version}
+# https://bugzilla.redhat.com/show_bug.cgi?id=1410631
+Requires:       (python3-rpm-generators if rpm-build)
 Summary:        Include Files and Libraries Mandatory for Building Python Modules
 
 %description -n python3-devel
