@@ -1,6 +1,5 @@
 #
-# Mer Python 3 spec file
-# https://build.merproject.org/project/show?project=mer-python3
+# SailfishOS Python 3 spec file
 #
 # adapted from: spec file for package python3-base
 # Copyright (c) 2013 SUSE LINUX Products GmbH, Nuernberg, Germany.
@@ -32,7 +31,6 @@ BuildRequires:  libffi-devel
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python-2.0
-Group:          Development/Languages/Python
 Version:        3.8.1
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
@@ -59,7 +57,12 @@ Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
 %define         so_version %{python_version_soname}1_0
 %define dynlib() %{sitedir}/lib-dynload/%{1}.cpython-%{python_version_abitag}-%{platform_triplet}.so
 
-Requires:       libpython%{so_version} = %{version}
+# Disable automatic bytecompilation. The python3 binary is not yet be
+# available in /usr/bin when Python is built. Also, the bytecompilation fails
+# on files that test invalid syntax.
+%global __os_install_post %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
+
+Requires:       python3-libs = %{version}-%{release}
 
 %description
 Python is an interpreted, object-oriented programming language, and is
@@ -76,8 +79,14 @@ Authors:
 
 %package -n python3-devel
 Requires:       %{name} = %{version}
+# rpm-build needs python3-rpm-generators and python3-setuptools when python3-devel
+# is installed but not otherwise. Putting this conditional Requires in python3-devel
+# means that rpm-build does not have to know about python specific stuff.
+# See https://bugzilla.redhat.com/show_bug.cgi?id=1410631 for rpm-build discussion
+# and https://rpm.org/user_doc/boolean_dependencies.html for conditional Requires.
+Requires:       (python3-rpm-generators if rpm-build)
+Requires:       (python3-setuptools if rpm-build)
 Summary:        Include Files and Libraries Mandatory for Building Python Modules
-Group:          Development/Languages/Python
 
 %description -n python3-devel
 The Python programming language's interpreter can be extended with
@@ -92,9 +101,8 @@ package up to version 2.2.2.
 
 
 %package -n python3-testsuite
-Requires:       python3-base = %{version}
+Requires:       %{name} = %{version}
 Summary:        Unit tests for Python and its standard library
-Group:          Development/Languages/Python
 
 %description -n python3-testsuite
 Unit tests that are useful for verifying integrity and functionality
@@ -102,12 +110,12 @@ of the installed Python interpreter and standard library.
 They are a documented part of stdlib, as a module 'test'.
 
 
-%package -n libpython%{so_version}
+%package -n python3-libs
 Summary:        Python Interpreter shared library
-Group:          Development/Languages/Python
 Obsoletes:      libpython3_4m1_0
+Obsoletes:      libpython3_81_0
 
-%description -n libpython%{so_version}
+%description -n python3-libs
 Python is an interpreted, object-oriented programming language, and is
 often compared to Tcl, Perl, Scheme, or Java.
 
@@ -116,30 +124,19 @@ other applications.
 
 
 %package -n python3-doc
+Requires:       %{name} = %{version}
 Summary:        Documentation for %{name}
-Group:          Documentation
-Requires:       python3-base = %{version}
 
 %description -n python3-doc
 This package provides man pages for %{name}.
 
 
 %package -n python3-pip
-Requires:       python3-base = %{version}
+Requires:       %{name} = %{version}
 Summary:        Pip package manager
-Group:          Development/Languages/Python
 
 %description -n python3-pip
 The pip package manager.
-
-
-%package -n python3-setuptools
-Requires:       python3-base = %{version}
-Summary:        Setup tools for package distribution
-Group:          Development/Languages/Python
-
-%description -n python3-setuptools
-The setup python tool to manage package distribution and installation.
 
 
 %prep
@@ -265,11 +262,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man1/python3.1*
 %{_mandir}/man1/python%{python_version}.1*
 
-%post -n libpython%{so_version} -p /sbin/ldconfig
+%post -n python3-libs -p /sbin/ldconfig
 
-%postun -n libpython%{so_version} -p /sbin/ldconfig
+%postun -n python3-libs -p /sbin/ldconfig
 
-%files -n libpython%{so_version}
+%files -n python3-libs
 %defattr(644, root,root)
 %{_libdir}/libpython%{python_version}.so.*
 
@@ -305,16 +302,6 @@ rm -rf $RPM_BUILD_ROOT
 # new in python 3.4
 %attr(755, root, root) %{_bindir}/pip3
 %attr(755, root, root) %{_bindir}/pip%{python_version}
-
-%files -n python3-setuptools
-%defattr(644, root, root, 755)
-%{sitedir}/site-packages/setuptools
-%{sitedir}/site-packages/setuptools*.dist-info
-%{sitedir}/site-packages/pkg_resources
-%{sitedir}/site-packages/easy_install.py
-%{sitedir}/site-packages/__pycache__/easy_install*
-# new in python 3.4
-%attr(755, root, root) %{_bindir}/easy_install-%{python_version}
 
 %files
 %defattr(644, root, root, 755)
