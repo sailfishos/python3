@@ -79,6 +79,10 @@ Authors:
 
 %package -n python3-devel
 Requires:       %{name} = %{version}
+# The RPM related dependencies bring nothing to a non-RPM Python developer
+# But we want them when packages BuildRequire python3-devel
+Requires:       (python-rpm-macros if rpm-build)
+Requires:       (python3-rpm-macros if rpm-build)
 # rpm-build needs python3-rpm-generators and python3-setuptools when python3-devel
 # is installed but not otherwise. Putting this conditional Requires in python3-devel
 # means that rpm-build does not have to know about python specific stuff.
