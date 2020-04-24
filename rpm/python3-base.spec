@@ -22,7 +22,6 @@ BuildRequires:  fdupes
 BuildRequires:  pkgconfig
 BuildRequires:  xz
 BuildRequires:  zlib-devel
-BuildRequires:  sqlite-devel
 BuildRequires:  openssl-devel
 BuildRequires:  bzip2-devel
 BuildRequires:  xz-devel
@@ -30,16 +29,17 @@ BuildRequires:  glibc-headers
 BuildRequires:  libffi-devel
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
-License:        Python-2.0
+License:        Python
 Version:        3.8.1
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc
-# To rebuild or extend the patch set apply these patches to upstream
-# on a branch called sfos/<python-tag> using base provided in the
-# first patch, rebase and regenerate using:
-#  cd upstream && git format-patch --base=<python-tag> <python-tag>..sfos/<python-tag> -o ../rpm/
+# skip-sem-test.patch
+# Disables semaphore test. OBS arm build environment doesn't have
+# /dev/shm mounted, so the test fails, crippling multiprocessing
+# support for real devices.
 Patch0:         0001-configure-Skip-semaphore-test.patch
+# Disable parallel compileall in make install.
 Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
 
 %define         python_version  3.8
@@ -144,15 +144,7 @@ The pip package manager.
 
 
 %prep
-%setup -q -n %{name}-%{version}/upstream
-
-# skip-sem-test.patch
-# Disables semaphore test. OBS arm build environment doesn't have
-# /dev/shm mounted, so the test fails, crippling multiprocessing
-# support for real devices.
-%patch0 -p1
-# Disable parallel compileall in make install.
-%patch1 -p1
+%autosetup -p1 -n %{name}-%{version}/upstream
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
@@ -179,6 +171,7 @@ _uuid
 readline
 _curses
 _curses_panel
+_sqlite3
 EOF
 
 ./configure \
@@ -354,7 +347,6 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _testbuffer}
 %{dynlib unicodedata}
 %{dynlib zlib}
-%{dynlib _sqlite3}
 %{dynlib _bz2}
 %{dynlib _hashlib}
 %{dynlib _ssl}
