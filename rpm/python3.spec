@@ -250,6 +250,15 @@ install -c -m 644 README.rst                        $PDOCS/
 # remove .exe files
 find $RPM_BUILD_ROOT%{sitedir}/ -type f -name '*.exe' -delete
 
+# remove setuptools
+rm -rf $RPM_BUILD_ROOT/%{sitedir}/site-packages/setuptools
+rm -rf $RPM_BUILD_ROOT/%{sitedir}/site-packages/setuptools*.dist-info
+rm -rf $RPM_BUILD_ROOT/%{sitedir}/site-packages/pkg_resources
+rm -f $RPM_BUILD_ROOT/%{sitedir}/site-packages/easy_install.py
+rm -f $RPM_BUILD_ROOT/%{sitedir}/site-packages/__pycache__/easy_install*
+rm -f $RPM_BUILD_ROOT/%{_bindir}/easy_install-%{python_version}
+
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
