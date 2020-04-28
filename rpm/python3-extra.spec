@@ -20,6 +20,7 @@ Name:           python3-extra
 BuildRequires:  automake
 BuildRequires:  readline-devel
 BuildRequires:  python3-devel
+BuildRequires:  sqlite-devel
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter extra modules
 License:        Python
@@ -54,10 +55,18 @@ Additional base modules for Python.
 %define dynlib() %{sitedir}/lib-dynload/%{1}.cpython-%{python_version_abitag}-%{platform_triplet}.so
 
 %package -n python3-curses
+Requires:       python3-base = %{version}
 Summary:        Python3 module for readline and ncurses
 
 %description -n python3-curses
 This package contains the readline and ncurses modules for Python.
+
+%package -n python3-sqlite
+Requires:       python3-base = %{version}
+Summary:        Python3 module for sqlite
+
+%description -n python3-sqlite
+This package contains the sqlite module for Python.
 
 %prep
 %autosetup -p1 -n %{name}-%{version}/upstream
@@ -113,7 +122,6 @@ _sha256
 _sha3
 _sha512
 _socket
-_sqlite3
 _ssl
 _statistics
 _struct
@@ -173,3 +181,8 @@ rm -f $RPM_BUILD_ROOT%{_bindir}/*
 %{dynlib _curses}
 %{dynlib _curses_panel}
 %{dynlib readline}
+
+%files -n python3-sqlite
+%defattr(644, root, root, 755)
+%license LICENSE
+%{dynlib _sqlite3}
