@@ -27,6 +27,10 @@ BuildRequires:  bzip2-devel
 BuildRequires:  xz-devel
 BuildRequires:  glibc-headers
 BuildRequires:  libffi-devel
+# The RPM related dependencies bring nothing when building main python
+# project, that is why we need to explicitly depend rpm generators
+BuildRequires:  python3-rpm-generators
+
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python
