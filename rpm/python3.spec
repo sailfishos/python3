@@ -28,8 +28,16 @@ BuildRequires:  xz-devel
 BuildRequires:  glibc-headers
 BuildRequires:  libffi-devel
 # The RPM related dependencies bring nothing when building main python
-# project, that is why we need to explicitly depend rpm generators
+# project, that is why we need to explicitly depend rpm generators.
+# When bootstrapping python3, we need to build setuptools.
+# but setuptools BR python3-devel and that brings in python3-rpm-generators;
+# python3-rpm-generators needs python3-setuptools, so we cannot have it yet.
+#
+# Procedure: https://fedoraproject.org/wiki/SIGs/Python/UpgradingPython
+#
+%if %{?py_bootstrap:0}%{!?py_bootstrap:1}
 BuildRequires:  python3-rpm-generators
+%endif
 
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
@@ -92,8 +100,10 @@ Requires:       (python3-rpm-macros if rpm-build)
 # means that rpm-build does not have to know about python specific stuff.
 # See https://bugzilla.redhat.com/show_bug.cgi?id=1410631 for rpm-build discussion
 # and https://rpm.org/user_doc/boolean_dependencies.html for conditional Requires.
+%if %{?py_bootstrap:0}%{!?py_bootstrap:1}
 Requires:       (python3-rpm-generators if rpm-build)
 Requires:       (python3-setuptools if rpm-build)
+%endif
 Summary:        Include Files and Libraries Mandatory for Building Python Modules
 
 %description -n python3-devel
