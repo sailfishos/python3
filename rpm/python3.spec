@@ -27,6 +27,18 @@ BuildRequires:  bzip2-devel
 BuildRequires:  xz-devel
 BuildRequires:  glibc-headers
 BuildRequires:  libffi-devel
+# The RPM related dependencies bring nothing when building main python
+# project, that is why we need to explicitly depend rpm generators.
+# When bootstrapping python3, we need to build setuptools.
+# but setuptools BR python3-devel and that brings in python3-rpm-generators;
+# python3-rpm-generators needs python3-setuptools, so we cannot have it yet.
+#
+# Procedure: https://fedoraproject.org/wiki/SIGs/Python/UpgradingPython
+#
+%if %{?py_bootstrap:0}%{!?py_bootstrap:1}
+BuildRequires:  python3-rpm-generators
+%endif
+
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python
@@ -88,8 +100,10 @@ Requires:       (python3-rpm-macros if rpm-build)
 # means that rpm-build does not have to know about python specific stuff.
 # See https://bugzilla.redhat.com/show_bug.cgi?id=1410631 for rpm-build discussion
 # and https://rpm.org/user_doc/boolean_dependencies.html for conditional Requires.
+%if %{?py_bootstrap:0}%{!?py_bootstrap:1}
 Requires:       (python3-rpm-generators if rpm-build)
 Requires:       (python3-setuptools if rpm-build)
+%endif
 Summary:        Include Files and Libraries Mandatory for Building Python Modules
 
 %description -n python3-devel
@@ -215,12 +229,12 @@ install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages/__pycache__
 
 # if pip is present on the system, ensurepip will not do anything
 # so copying pip related-files by hand from the system.
-if [ -f /usr/bin/pip3 ] ; then
-    install /usr/bin/easy_install-%{python_version} /usr/bin/pip3 /usr/bin/pip%{python_version} ${RPM_BUILD_ROOT}%{_bindir}
-    install /usr/lib/python%{python_version}/site-packages/easy_install.py ${RPM_BUILD_ROOT}%{sitedir}/site-packages
-    cp -rp /usr/lib/python%{python_version}/site-packages/pip* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
-    cp -rp /usr/lib/python%{python_version}/site-packages/setuptools* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
-    cp -rp /usr/lib/python%{python_version}/site-packages/pkg_resources ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+if [ -f {_bindir}/pip3 ] ; then
+    install {_bindir}/easy_install-%{python_version} {_bindir}/pip3 {_bindir}/pip%{python_version} ${RPM_BUILD_ROOT}%{_bindir}
+    install {_libdir}/python%{python_version}/site-packages/easy_install.py ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+    cp -rp {_libdir}/python%{python_version}/site-packages/pip* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+    cp -rp {_libdir}/python%{python_version}/site-packages/setuptools* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+    cp -rp {_libdir}/python%{python_version}/site-packages/pkg_resources ${RPM_BUILD_ROOT}%{sitedir}/site-packages
 fi
 
 # Idle (Tk-based IDE, not useful on mobile)
@@ -249,6 +263,15 @@ install -c -m 644 README.rst                        $PDOCS/
 
 # remove .exe files
 find $RPM_BUILD_ROOT%{sitedir}/ -type f -name '*.exe' -delete
+
+# remove setuptools
+rm -rf $RPM_BUILD_ROOT/%{sitedir}/site-packages/setuptools
+rm -rf $RPM_BUILD_ROOT/%{sitedir}/site-packages/setuptools*.dist-info
+rm -rf $RPM_BUILD_ROOT/%{sitedir}/site-packages/pkg_resources
+rm -f $RPM_BUILD_ROOT/%{sitedir}/site-packages/easy_install.py
+rm -f $RPM_BUILD_ROOT/%{sitedir}/site-packages/__pycache__/easy_install*
+rm -f $RPM_BUILD_ROOT/%{_bindir}/easy_install-%{python_version}
+
 
 %clean
 rm -rf $RPM_BUILD_ROOT
