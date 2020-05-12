@@ -229,12 +229,12 @@ install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages/__pycache__
 
 # if pip is present on the system, ensurepip will not do anything
 # so copying pip related-files by hand from the system.
-if [ -f /usr/bin/pip3 ] ; then
-    install /usr/bin/easy_install-%{python_version} /usr/bin/pip3 /usr/bin/pip%{python_version} ${RPM_BUILD_ROOT}%{_bindir}
-    install /usr/lib/python%{python_version}/site-packages/easy_install.py ${RPM_BUILD_ROOT}%{sitedir}/site-packages
-    cp -rp /usr/lib/python%{python_version}/site-packages/pip* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
-    cp -rp /usr/lib/python%{python_version}/site-packages/setuptools* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
-    cp -rp /usr/lib/python%{python_version}/site-packages/pkg_resources ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+if [ -f {_bindir}/pip3 ] ; then
+    install {_bindir}/easy_install-%{python_version} {_bindir}/pip3 {_bindir}/pip%{python_version} ${RPM_BUILD_ROOT}%{_bindir}
+    install {_libdir}/python%{python_version}/site-packages/easy_install.py ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+    cp -rp {_libdir}/python%{python_version}/site-packages/pip* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+    cp -rp {_libdir}/python%{python_version}/site-packages/setuptools* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
+    cp -rp {_libdir}/python%{python_version}/site-packages/pkg_resources ${RPM_BUILD_ROOT}%{sitedir}/site-packages
 fi
 
 # Idle (Tk-based IDE, not useful on mobile)
