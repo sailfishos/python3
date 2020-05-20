@@ -40,6 +40,8 @@ Patch2:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
 # Change the various install paths to use /usr/lib64/ instead or /usr/lib
 # Only used when "%%{_lib}" == "lib64"
 Patch3:         0004-00102-Change-the-various-install-paths-to-use-usr-li.patch
+# Ensurepip should honour the value of $(prefix)
+Patch4:         0005-bpo-31046_ensurepip_honours_prefix.patch
 
 %description
 Additional base modules for Python.
@@ -82,6 +84,7 @@ This package contains the sqlite module for Python.
 %if "%{_lib}" == "lib64"
 %patch3 -p1
 %endif
+%patch4 -p1
 
 %build
 # use rpm_opt_flags
