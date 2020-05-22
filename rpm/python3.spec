@@ -234,6 +234,14 @@ find ${RPM_BUILD_ROOT} -name 'RECORD' -print0 | \
 # install "site-packages" and __pycache__ for third parties
 install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages
 install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages/__pycache__
+%if "%{_lib}" == "lib64"
+# The 64-bit version needs to create "site-packages" in /usr/lib/ (for
+# pure-Python modules) as well as in /usr/lib64/ (for packages with extension
+# modules).
+# Note that rpmlint will complain about hardcoded library path;
+# this is intentional.
+mkdir -p ${RPM_BUILD_ROOT}%{_prefix}/lib/python%{python_version}/site-packages/__pycache__
+%endif
 
 # Idle (Tk-based IDE, not useful on mobile)
 rm -f \
@@ -407,6 +415,11 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/curses
 %{sitedir}/site-packages/README.txt
 %{sitedir}/__pycache__
+%if "%{_lib}" == "lib64"
+%attr(755, root, root) %dir %{_prefix}/lib/python%{python_version}
+%attr(755, root, root) %dir %{_prefix}/lib/python%{python_version}/site-packages
+%attr(755, root, root) %dir %{_prefix}/lib/python%{python_version}/site-packages/__pycache__
+%endif
 # new in python 3.4
 %{sitedir}/asyncio
 %{sitedir}/site-packages/__pycache__
