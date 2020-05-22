@@ -50,9 +50,16 @@ Source1:        python3-rpmlintrc
 # Disables semaphore test. OBS arm build environment doesn't have
 # /dev/shm mounted, so the test fails, crippling multiprocessing
 # support for real devices.
-Patch0:         0001-configure-Skip-semaphore-test.patch
+Patch0:         0001-Skip-semaphore-test.patch
 # Disable parallel compileall in make install.
 Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
+# Fixup distutils/unixccompiler.py to remove standard library path from rpath:
+Patch2:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
+# Change the various install paths to use /usr/lib64/ instead or /usr/lib
+# Only used when "%%{_lib}" == "lib64"
+Patch3:         0004-00102-Change-the-various-install-paths-to-use-usr-li.patch
+# Ensurepip should honour the value of $(prefix)
+Patch4:         0005-bpo-31046_ensurepip_honours_prefix.patch
 
 %define         python_version  3.8
 %define         python_version_abitag   38
@@ -149,16 +156,16 @@ Summary:        Documentation for %{name}
 This package provides man pages for %{name}.
 
 
-%package -n python3-pip
-Requires:       %{name} = %{version}
-Summary:        Pip package manager
-
-%description -n python3-pip
-The pip package manager.
-
-
 %prep
-%autosetup -p1 -n %{name}-%{version}/upstream
+%setup -q -n %{name}-%{version}/upstream
+
+%patch0 -p1
+%patch1 -p1
+%patch2 -p1
+%if "%{_lib}" == "lib64"
+%patch3 -p1
+%endif
+%patch4 -p1
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
@@ -195,6 +202,7 @@ EOF
     --docdir=%{_docdir}/python \
     --enable-ipv6 \
     --enable-shared \
+    --with-ensurepip=no \
     --with-dbmliborder=bdb \
     --with-system-ffi=yes
 
@@ -226,16 +234,14 @@ find ${RPM_BUILD_ROOT} -name 'RECORD' -print0 | \
 # install "site-packages" and __pycache__ for third parties
 install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages
 install -d -m 755 ${RPM_BUILD_ROOT}%{sitedir}/site-packages/__pycache__
-
-# if pip is present on the system, ensurepip will not do anything
-# so copying pip related-files by hand from the system.
-if [ -f {_bindir}/pip3 ] ; then
-    install {_bindir}/easy_install-%{python_version} {_bindir}/pip3 {_bindir}/pip%{python_version} ${RPM_BUILD_ROOT}%{_bindir}
-    install {_libdir}/python%{python_version}/site-packages/easy_install.py ${RPM_BUILD_ROOT}%{sitedir}/site-packages
-    cp -rp {_libdir}/python%{python_version}/site-packages/pip* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
-    cp -rp {_libdir}/python%{python_version}/site-packages/setuptools* ${RPM_BUILD_ROOT}%{sitedir}/site-packages
-    cp -rp {_libdir}/python%{python_version}/site-packages/pkg_resources ${RPM_BUILD_ROOT}%{sitedir}/site-packages
-fi
+%if "%{_lib}" == "lib64"
+# The 64-bit version needs to create "site-packages" in /usr/lib/ (for
+# pure-Python modules) as well as in /usr/lib64/ (for packages with extension
+# modules).
+# Note that rpmlint will complain about hardcoded library path;
+# this is intentional.
+mkdir -p ${RPM_BUILD_ROOT}%{_prefix}/lib/python%{python_version}/site-packages/__pycache__
+%endif
 
 # Idle (Tk-based IDE, not useful on mobile)
 rm -f \
@@ -263,14 +269,6 @@ install -c -m 644 README.rst                        $PDOCS/
 
 # remove .exe files
 find $RPM_BUILD_ROOT%{sitedir}/ -type f -name '*.exe' -delete
-
-# remove setuptools
-rm -rf $RPM_BUILD_ROOT/%{sitedir}/site-packages/setuptools
-rm -rf $RPM_BUILD_ROOT/%{sitedir}/site-packages/setuptools*.dist-info
-rm -rf $RPM_BUILD_ROOT/%{sitedir}/site-packages/pkg_resources
-rm -f $RPM_BUILD_ROOT/%{sitedir}/site-packages/easy_install.py
-rm -f $RPM_BUILD_ROOT/%{sitedir}/site-packages/__pycache__/easy_install*
-rm -f $RPM_BUILD_ROOT/%{_bindir}/easy_install-%{python_version}
 
 
 %clean
@@ -310,18 +308,6 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/*/tests
 %{dynlib _ctypes_test}
 %{dynlib _testcapi}
-
-# Cannot be packaged if pip is already installed on the system
-# because ensurepip script do not install anything if pip is found
-# in the path.
-%files -n python3-pip
-%defattr(644, root, root, 755)
-%{sitedir}/ensurepip
-%{sitedir}/site-packages/pip
-%{sitedir}/site-packages/pip*.dist-info
-# new in python 3.4
-%attr(755, root, root) %{_bindir}/pip3
-%attr(755, root, root) %{_bindir}/pip%{python_version}
 
 %files
 %defattr(644, root, root, 755)
@@ -409,6 +395,7 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/distutils
 %{sitedir}/email
 %{sitedir}/encodings
+%{sitedir}/ensurepip
 %{sitedir}/html
 %{sitedir}/xml
 %{sitedir}/xmlrpc
@@ -428,6 +415,11 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/curses
 %{sitedir}/site-packages/README.txt
 %{sitedir}/__pycache__
+%if "%{_lib}" == "lib64"
+%attr(755, root, root) %dir %{_prefix}/lib/python%{python_version}
+%attr(755, root, root) %dir %{_prefix}/lib/python%{python_version}/site-packages
+%attr(755, root, root) %dir %{_prefix}/lib/python%{python_version}/site-packages/__pycache__
+%endif
 # new in python 3.4
 %{sitedir}/asyncio
 %{sitedir}/site-packages/__pycache__

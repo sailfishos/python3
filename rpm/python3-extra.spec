@@ -32,9 +32,16 @@ Source1:        python3-rpmlintrc
 # Disables semaphore test. OBS arm build environment doesn't have
 # /dev/shm mounted, so the test fails, crippling multiprocessing
 # support for real devices.
-Patch0:         0001-configure-Skip-semaphore-test.patch
+Patch0:         0001-Skip-semaphore-test.patch
 # Disable parallel compileall in make install.
 Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
+# Fixup distutils/unixccompiler.py to remove standard library path from rpath:
+Patch2:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
+# Change the various install paths to use /usr/lib64/ instead or /usr/lib
+# Only used when "%%{_lib}" == "lib64"
+Patch3:         0004-00102-Change-the-various-install-paths-to-use-usr-li.patch
+# Ensurepip should honour the value of $(prefix)
+Patch4:         0005-bpo-31046_ensurepip_honours_prefix.patch
 
 %description
 Additional base modules for Python.
@@ -69,7 +76,15 @@ Summary:        Python3 module for sqlite
 This package contains the sqlite module for Python.
 
 %prep
-%autosetup -p1 -n %{name}-%{version}/upstream
+%setup -q -n %{name}-%{version}/upstream
+
+%patch0 -p1
+%patch1 -p1
+%patch2 -p1
+%if "%{_lib}" == "lib64"
+%patch3 -p1
+%endif
+%patch4 -p1
 
 %build
 # use rpm_opt_flags
