@@ -100,16 +100,26 @@ Authors:
 Requires:       %{name} = %{version}
 # The RPM related dependencies bring nothing to a non-RPM Python developer
 # But we want them when packages BuildRequire python3-devel
+%if 0%{?no_rpm_conditional_requires}
+Requires:       python3-rpm-generators
+Requires:       python3-setuptools
+%else
 Requires:       (python-rpm-macros if rpm-build)
 Requires:       (python3-rpm-macros if rpm-build)
+%endif
 # rpm-build needs python3-rpm-generators and python3-setuptools when python3-devel
 # is installed but not otherwise. Putting this conditional Requires in python3-devel
 # means that rpm-build does not have to know about python specific stuff.
 # See https://bugzilla.redhat.com/show_bug.cgi?id=1410631 for rpm-build discussion
 # and https://rpm.org/user_doc/boolean_dependencies.html for conditional Requires.
 %if %{?py_bootstrap:0}%{!?py_bootstrap:1}
+%if 0%{?no_rpm_conditional_requires}
+Requires:       python3-rpm-generators
+Requires:       python3-setuptools
+%else
 Requires:       (python3-rpm-generators if rpm-build)
 Requires:       (python3-setuptools if rpm-build)
+%endif
 %endif
 Summary:        Include Files and Libraries Mandatory for Building Python Modules
 
