@@ -101,8 +101,9 @@ Requires:       %{name} = %{version}
 # The RPM related dependencies bring nothing to a non-RPM Python developer
 # But we want them when packages BuildRequire python3-devel
 %if 0%{?no_rpm_conditional_requires}
+Requires:       python-rpm-macros
+Requires:       python3-rpm-macros
 Requires:       python3-rpm-generators
-Requires:       python3-setuptools
 %else
 Requires:       (python-rpm-macros if rpm-build)
 Requires:       (python3-rpm-macros if rpm-build)
