@@ -167,6 +167,25 @@ Summary:        Documentation for %{name}
 This package provides man pages for %{name}.
 
 
+%package -n python-is-python3
+Summary:        Transitional package for python dependency
+Requires:       %{name} = %{version}
+Provides:       python
+
+%description -n python-is-python3
+Transitional package to symlink /usr/bin/python to python3.
+
+
+%package -n python-devel-is-python3-devel
+Summary:        Transitional package for python-devel dependency
+Requires:       python3-devel = %{version}
+Requires:       python-is-python3
+Provides:       python-devel
+
+%description -n python-devel-is-python3-devel
+Transitional package to symlink /usr/bin/python-config to python3-config.
+
+
 %prep
 %setup -q -n %{name}-%{version}/upstream
 
@@ -266,6 +285,10 @@ rm -rf $RPM_BUILD_ROOT/%{sitedir}/turtledemo
 
 # overwrite the copied binary with a link
 ln -sf python%{python_version} ${RPM_BUILD_ROOT}%{_bindir}/python3
+
+# transitional symlink for python compatibility
+ln -sf python3 ${RPM_BUILD_ROOT}%{_bindir}/python
+ln -sf python3-config ${RPM_BUILD_ROOT}%{_bindir}/python-config
 
 # replace duplicate .pyo/.pyc with hardlinks
 %fdupes $RPM_BUILD_ROOT/%{sitedir}
@@ -441,3 +464,11 @@ rm -rf $RPM_BUILD_ROOT
 # links to copy
 %{_bindir}/pydoc3
 %{_bindir}/python3
+
+%files -n python-is-python3
+%defattr(644, root, root, 755)
+%{_bindir}/python
+
+%files -n python-devel-is-python3-devel
+%defattr(644, root, root, 755)
+%{_bindir}/python-config
