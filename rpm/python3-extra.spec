@@ -96,7 +96,7 @@ autoreconf -fi
 # prevent make from trying to rebuild asdl stuff, which requires existing python installation
 touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
 
-# Disable all modules already compiled in python3-base
+# Disable all modules already compiled in python3-base, or otherwise unwanted
 touch Modules/Setup
 cat <<EOF >> Modules/Setup
 *disabled*
@@ -145,6 +145,7 @@ _testcapi
 _testimportmultiple
 _testinternalcapi
 _testmultiphase
+_uuid
 _xxsubinterpreters
 _xxtestfuzz
 array
