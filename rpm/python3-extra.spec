@@ -62,6 +62,8 @@ Additional base modules for Python.
 %define dynlib() %{sitedir}/lib-dynload/%{1}.cpython-%{python_version_abitag}-%{platform_triplet}.so
 
 %package -n python3-curses
+Provides:       python%{python_version}dist(curses) = %{version}
+Provides:       python3dist(curses) = %{version}
 Requires:       python3-base = %{version}
 Summary:        Python3 module for readline and ncurses
 
@@ -69,6 +71,10 @@ Summary:        Python3 module for readline and ncurses
 This package contains the readline and ncurses modules for Python.
 
 %package -n python3-sqlite
+Provides:       python%{python_version}dist(sqlite) = %{version}
+Provides:       python3dist(sqlite) = %{version}
+Provides:       python%{python_version}dist(sqlite3) = %{version}
+Provides:       python3dist(sqlite3) = %{version}
 Requires:       python3-base = %{version}
 Summary:        Python3 module for sqlite
 
@@ -96,7 +102,7 @@ autoreconf -fi
 # prevent make from trying to rebuild asdl stuff, which requires existing python installation
 touch Parser/asdl* Python/Python-ast.c Include/Python-ast.h
 
-# Disable all modules already compiled in python3-base
+# Disable all modules already compiled in python3-base, or otherwise unwanted
 touch Modules/Setup
 cat <<EOF >> Modules/Setup
 *disabled*
@@ -145,6 +151,7 @@ _testcapi
 _testimportmultiple
 _testinternalcapi
 _testmultiphase
+_uuid
 _xxsubinterpreters
 _xxtestfuzz
 array
