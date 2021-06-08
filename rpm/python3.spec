@@ -67,7 +67,7 @@ Patch4:         0005-bpo-31046_ensurepip_honours_prefix.patch
 %define         sitedir         %{_libdir}/python%{python_version}
 
 # Some files are named so that they have this platform triplet
-%if %{_arch} == arm
+%ifarch %{arm}
 %define armsuffix hf
 %endif
 %define		platform_triplet %{_arch}-%{_os}%{?_gnu}%{?armsuffix}

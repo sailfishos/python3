@@ -52,7 +52,7 @@ Additional base modules for Python.
 %define         sitedir         %{_libdir}/python%{python_version}
 
 # Some files are named so that they have this platform triplet
-%if %{_arch} == arm
+%ifarch %{arm}
 %define armsuffix hf
 %endif
 %define         platform_triplet %{_arch}-%{_os}%{?_gnu}%{?armsuffix}
