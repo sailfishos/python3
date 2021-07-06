@@ -1,7 +1,7 @@
-From a72d6dbaad6e5010ad1b305a9921f77ba920aabc Mon Sep 17 00:00:00 2001
+From 2c4e442f87b114961da344b7bfd4e6224d803ad5 Mon Sep 17 00:00:00 2001
 From: David Malcolm <dmalcolm@redhat.com>
 Date: Wed, 13 Jan 2010 21:25:18 +0000
-Subject: [PATCH 4/4] 00102: Change the various install paths to use
+Subject: [PATCH 4/5] 00102: Change the various install paths to use
  /usr/lib64/ instead or /usr/lib/
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -87,7 +87,7 @@ index 287ab1989e..d4c05e0ab1 100644
          check_path(cmd.install_headers,
                     os.path.join(destination, "include", "python", "foopkg"))
 diff --git a/Lib/site.py b/Lib/site.py
-index a065ab0b5d..22d53fa562 100644
+index 9fa21cca38..2e24e86988 100644
 --- a/Lib/site.py
 +++ b/Lib/site.py
 @@ -335,11 +335,15 @@ def getsitepackages(prefixes=None):
@@ -107,10 +107,10 @@ index a065ab0b5d..22d53fa562 100644
      return sitepackages
  
 diff --git a/Lib/sysconfig.py b/Lib/sysconfig.py
-index b9e2fafbc0..0ae6d35b69 100644
+index 3f702d7ea5..df4f720804 100644
 --- a/Lib/sysconfig.py
 +++ b/Lib/sysconfig.py
-@@ -20,10 +20,10 @@ __all__ = [
+@@ -25,10 +25,10 @@ _ALWAYS_STR = {
  
  _INSTALL_SCHEMES = {
      'posix_prefix': {
@@ -124,7 +124,7 @@ index b9e2fafbc0..0ae6d35b69 100644
          'include':
              '{installed_base}/include/python{py_version_short}{abiflags}',
          'platinclude':
-@@ -62,10 +62,10 @@ _INSTALL_SCHEMES = {
+@@ -67,10 +67,10 @@ _INSTALL_SCHEMES = {
          'data': '{userbase}',
          },
      'posix_user': {
@@ -139,10 +139,10 @@ index b9e2fafbc0..0ae6d35b69 100644
          'scripts': '{userbase}/bin',
          'data': '{userbase}',
 diff --git a/Lib/test/test_site.py b/Lib/test/test_site.py
-index 41c4229919..543c88432a 100644
+index 9b2df6bfc3..e75ae44637 100644
 --- a/Lib/test/test_site.py
 +++ b/Lib/test/test_site.py
-@@ -266,8 +266,8 @@ class HelperFunctionsTests(unittest.TestCase):
+@@ -268,8 +268,8 @@ class HelperFunctionsTests(unittest.TestCase):
          dirs = site.getsitepackages()
          if os.sep == '/':
              # OS X, Linux, FreeBSD, etc
@@ -154,7 +154,7 @@ index 41c4229919..543c88432a 100644
                                    'site-packages')
              self.assertEqual(dirs[0], wanted)
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index ff37ecb53e..895e945667 100644
+index fd2f89ace2..5d7bc4e13a 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
 @@ -143,7 +143,7 @@ LIBDIR=		@libdir@
@@ -167,7 +167,7 @@ index ff37ecb53e..895e945667 100644
  
  # Detailed destination directories
 diff --git a/Modules/getpath.c b/Modules/getpath.c
-index b727f66953..a0c5fb6139 100644
+index 63815c5fed..ca5f481bc6 100644
 --- a/Modules/getpath.c
 +++ b/Modules/getpath.c
 @@ -730,7 +730,7 @@ calculate_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
@@ -179,7 +179,7 @@ index b727f66953..a0c5fb6139 100644
          if (_PyStatus_EXCEPTION(status)) {
              return status;
          }
-@@ -1067,7 +1067,7 @@ calculate_zip_path(PyCalculatePath *calculate, const wchar_t *prefix,
+@@ -1063,7 +1063,7 @@ calculate_zip_path(PyCalculatePath *calculate, const wchar_t *prefix,
              return PATHLEN_ERR();
          }
      }
@@ -188,7 +188,7 @@ index b727f66953..a0c5fb6139 100644
      if (_PyStatus_EXCEPTION(status)) {
          return status;
      }
-@@ -1197,7 +1197,7 @@ calculate_init(PyCalculatePath *calculate, const PyConfig *config)
+@@ -1193,7 +1193,7 @@ calculate_init(PyCalculatePath *calculate, const PyConfig *config)
      if (!calculate->exec_prefix) {
          return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
      }
@@ -198,10 +198,10 @@ index b727f66953..a0c5fb6139 100644
          return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
      }
 diff --git a/configure b/configure
-index 0914e24704..889d6b6a7f 100755
+index 936f3d4596..92879d3bac 100755
 --- a/configure
 +++ b/configure
-@@ -15170,9 +15170,9 @@ fi
+@@ -15262,9 +15262,9 @@ fi
  
  
  if test x$PLATFORM_TRIPLET = x; then
@@ -214,10 +214,10 @@ index 0914e24704..889d6b6a7f 100755
  
  
 diff --git a/configure.ac b/configure.ac
-index b348fb9c1d..019552529c 100644
+index c70bed9956..e0ba29ce54 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -4668,9 +4668,9 @@ fi
+@@ -4720,9 +4720,9 @@ fi
  dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
  AC_SUBST(PY_ENABLE_SHARED)
  if test x$PLATFORM_TRIPLET = x; then
@@ -230,10 +230,10 @@ index b348fb9c1d..019552529c 100644
  AC_SUBST(LIBPL)
  
 diff --git a/setup.py b/setup.py
-index 20d7f35652..024a1035c0 100644
+index 0a2a435c60..c28c096d57 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -649,7 +649,7 @@ class PyBuildExt(build_ext):
+@@ -634,7 +634,7 @@ class PyBuildExt(build_ext):
          # directories (i.e. '.' and 'Include') must be first.  See issue
          # 10520.
          if not CROSS_COMPILING:
@@ -242,7 +242,7 @@ index 20d7f35652..024a1035c0 100644
              add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
          # only change this for cross builds for 3.3, issues on Mageia
          if CROSS_COMPILING:
-@@ -953,11 +953,11 @@ class PyBuildExt(build_ext):
+@@ -938,11 +938,11 @@ class PyBuildExt(build_ext):
              elif curses_library:
                  readline_libs.append(curses_library)
              elif self.compiler.find_library_file(self.lib_dirs +
@@ -257,5 +257,5 @@ index 20d7f35652..024a1035c0 100644
                                 libraries=readline_libs))
          else:
 -- 
-2.26.2
+2.25.1
 

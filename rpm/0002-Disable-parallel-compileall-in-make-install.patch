@@ -1,8 +1,8 @@
-From a7cdb5495dc172019d9f8c8cdebb436c643382ad Mon Sep 17 00:00:00 2001
+From 114ee979cb90affcdd799d9bc8f77152e4762a53 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Juho=20H=C3=A4m=C3=A4l=C3=A4inen?=
  <juho.hamalainen@jolla.com>
 Date: Thu, 23 Jan 2020 09:42:29 +0200
-Subject: [PATCH 2/4] Disable parallel compileall in make install.
+Subject: [PATCH 2/5] Disable parallel compileall in make install.
 
 Parallel compile breaks with old qemu.
 ---
@@ -10,10 +10,10 @@ Parallel compile breaks with old qemu.
  1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index 502317aa0c..ff37ecb53e 100644
+index 7e381283fe..fd2f89ace2 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
-@@ -1457,30 +1457,30 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
+@@ -1479,30 +1479,30 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
  	fi
  	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
  		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
@@ -51,5 +51,5 @@ index 502317aa0c..ff37ecb53e 100644
  	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
  		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/Grammar.txt
 -- 
-2.26.2
+2.25.1
 
