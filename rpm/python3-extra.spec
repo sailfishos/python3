@@ -17,6 +17,7 @@
 #
 
 Name:           python3-extra
+BuildRequires:  autoconf-archive
 BuildRequires:  automake
 BuildRequires:  readline-devel
 BuildRequires:  python3-devel
@@ -24,7 +25,7 @@ BuildRequires:  sqlite-devel
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter extra modules
 License:        Python
-Version:        3.8.1
+Version:        3.8.11
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc
@@ -41,7 +42,7 @@ Patch2:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
 # Only used when "%%{_lib}" == "lib64"
 Patch3:         0004-00102-Change-the-various-install-paths-to-use-usr-li.patch
 # Ensurepip should honour the value of $(prefix)
-Patch4:         0005-bpo-31046_ensurepip_honours_prefix.patch
+Patch4:         0005-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
 
 %description
 Additional base modules for Python.
