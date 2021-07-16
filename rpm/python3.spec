@@ -83,6 +83,7 @@ Patch4:         0005-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
 %global __os_install_post %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 Requires:       python3-libs = %{version}-%{release}
+Provides:       python3 = %{version}-%{release}
 
 %description
 Python is an interpreted, object-oriented programming language, and is
