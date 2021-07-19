@@ -28,6 +28,7 @@ BuildRequires:  bzip2-devel
 BuildRequires:  xz-devel
 BuildRequires:  glibc-headers
 BuildRequires:  libffi-devel
+BuildRequires:  pkgconfig(libcrypt)
 # The RPM related dependencies bring nothing when building main python
 # project, that is why we need to explicitly depend rpm generators.
 # When bootstrapping python3, we need to build setuptools.
@@ -99,6 +100,7 @@ Authors:
 
 %package -n python3-devel
 Requires:       %{name} = %{version}
+Requires:       pkgconfig(libcrypt)
 # The RPM related dependencies bring nothing to a non-RPM Python developer
 # But we want them when packages BuildRequire python3-devel
 %if 0%{?no_rpm_conditional_requires}
