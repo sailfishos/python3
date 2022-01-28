@@ -1,7 +1,7 @@
-From c1b053a19eeed77ebe73166743061189ff96ebfd Mon Sep 17 00:00:00 2001
+From 53fa271d04e48249562a9cf4a5b9eaa195fc354d Mon Sep 17 00:00:00 2001
 From: Zackery Spytz <zspytz@gmail.com>
 Date: Mon, 16 Dec 2019 18:24:08 -0700
-Subject: [PATCH 5/5] bpo-31046: ensurepip does not honour the value of
+Subject: [PATCH 5/6] bpo-31046: ensurepip does not honour the value of
  $(prefix)
 
 Co-Authored-By: Xavier de Gaye <xdegaye@gmail.com>

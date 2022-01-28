@@ -1,7 +1,7 @@
-From bb2cc033aa83266856a713729190aa95dbb21b3c Mon Sep 17 00:00:00 2001
+From 25f210f5d1cf0c1ef12565facc2e83bbc7f91505 Mon Sep 17 00:00:00 2001
 From: David Malcolm <dmalcolm@redhat.com>
 Date: Wed, 13 Jan 2010 21:25:18 +0000
-Subject: [PATCH 3/5] 00001: Fixup distutils/unixccompiler.py to remove
+Subject: [PATCH 3/6] 00001: Fixup distutils/unixccompiler.py to remove
  standard library path from rpath Was Patch0 in ivazquez' python3000 specfile
 
 ---

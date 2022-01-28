@@ -1,7 +1,7 @@
-From ab52252bf7063f38b6a3f242a3f12a40e893a0a5 Mon Sep 17 00:00:00 2001
+From e492d08776787b38ac610f52fab6a66f8da0abcb Mon Sep 17 00:00:00 2001
 From: David Greaves <david@dgreaves.com>
 Date: Fri, 12 Apr 2019 20:28:32 +0100
-Subject: [PATCH 1/5] Skip semaphore test.
+Subject: [PATCH 1/6] Skip semaphore test.
 
 OBS's arm build environment doesn't have /dev/shm
 mounted (real devices do) so this fails, crippling

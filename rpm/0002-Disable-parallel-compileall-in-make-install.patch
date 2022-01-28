@@ -1,8 +1,8 @@
-From 114ee979cb90affcdd799d9bc8f77152e4762a53 Mon Sep 17 00:00:00 2001
+From 2a651815ef778dc88e7a9234d85257be50ff4006 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Juho=20H=C3=A4m=C3=A4l=C3=A4inen?=
  <juho.hamalainen@jolla.com>
 Date: Thu, 23 Jan 2020 09:42:29 +0200
-Subject: [PATCH 2/5] Disable parallel compileall in make install.
+Subject: [PATCH 2/6] Disable parallel compileall in make install.
 
 Parallel compile breaks with old qemu.
 ---
