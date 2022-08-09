@@ -62,6 +62,8 @@ Patch2:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
 Patch3:         0004-00102-Change-the-various-install-paths-to-use-usr-li.patch
 # Ensurepip should honour the value of $(prefix)
 Patch4:         0005-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
+# Restore pyc to TIMESTAMP invalidation mode as default
+Patch5:         0006-pyc-timestamp-invalidation-mode.patch
 
 %define         python_version  3.8
 %define         python_version_abitag   38
@@ -180,6 +182,7 @@ This package provides man pages for %{name}.
 %patch3 -p1
 %endif
 %patch4 -p1
+%patch5 -p1
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
