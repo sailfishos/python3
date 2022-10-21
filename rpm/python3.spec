@@ -44,7 +44,7 @@ BuildRequires:  python3-rpm-generators
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python
-Version:        3.8.11
+Version:        3.8.15
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc
