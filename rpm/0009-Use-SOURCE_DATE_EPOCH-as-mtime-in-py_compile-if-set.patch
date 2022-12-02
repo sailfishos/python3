@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Matti=20Lehtim=C3=A4ki?= <matti.lehtimaki@jolla.com>
+Date: Mon, 5 Dec 2022 13:57:24 +0200
+Subject: [PATCH] Use SOURCE_DATE_EPOCH as mtime in py_compile if set
+
+---
+ Lib/py_compile.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/Lib/py_compile.py b/Lib/py_compile.py
+index bba3642bf2eebd98711d4e7d33564d4194114ea6..40ac3e60ccbeab6aa9351bbfa304cb3b1fe3613c 100644
+--- a/Lib/py_compile.py
++++ b/Lib/py_compile.py
+@@ -160,8 +160,9 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
+         pass
+     if invalidation_mode == PycInvalidationMode.TIMESTAMP:
+         source_stats = loader.path_stats(file)
++        mtime = int(os.getenv('SOURCE_DATE_EPOCH', source_stats['mtime']))
+         bytecode = importlib._bootstrap_external._code_to_timestamp_pyc(
+-            code, source_stats['mtime'], source_stats['size'])
++            code, mtime, source_stats['size'])
+     else:
+         source_hash = importlib.util.source_hash(source_bytes)
+         bytecode = importlib._bootstrap_external._code_to_hash_pyc(

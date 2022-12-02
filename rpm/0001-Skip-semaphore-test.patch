@@ -1,7 +1,7 @@
-From ab52252bf7063f38b6a3f242a3f12a40e893a0a5 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: David Greaves <david@dgreaves.com>
 Date: Fri, 12 Apr 2019 20:28:32 +0100
-Subject: [PATCH 1/5] Skip semaphore test.
+Subject: [PATCH] Skip semaphore test.
 
 OBS's arm build environment doesn't have /dev/shm
 mounted (real devices do) so this fails, crippling
@@ -16,7 +16,7 @@ Signed-off-by: David Greaves <david.greaves@jolla.com>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index e02cc2c656..c70bed9956 100644
+index e02cc2c65622fd002d86933a8dc365a05e660669..c70bed99563e771f4c37ff9a90e3279037c1c28c 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -4540,7 +4540,7 @@ int main(void) {
@@ -39,6 +39,3 @@ index e02cc2c656..c70bed9956 100644
  )
  AC_MSG_RESULT($ac_cv_broken_sem_getvalue)
  if test $ac_cv_broken_sem_getvalue = yes
--- 
-2.25.1
-

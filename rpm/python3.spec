@@ -44,7 +44,7 @@ BuildRequires:  python3-rpm-generators
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python
-Version:        3.8.11
+Version:        3.8.15
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc
@@ -63,7 +63,11 @@ Patch3:         0004-00102-Change-the-various-install-paths-to-use-usr-li.patch
 # Ensurepip should honour the value of $(prefix)
 Patch4:         0005-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
 # Restore pyc to TIMESTAMP invalidation mode as default
-Patch5:         0006-pyc-timestamp-invalidation-mode.patch
+Patch5:         0006-00328-Restore-pyc-to-TIMESTAMP-invalidation-mode-as-.patch
+Patch6:         0007-bpo-36302-Sort-list-of-sources.patch
+Patch7:         0008-distutils-reproducible-compile.patch
+Patch8:         0009-Use-SOURCE_DATE_EPOCH-as-mtime-in-py_compile-if-set.patch
+
 
 %define         python_version  3.8
 %define         python_version_abitag   38
@@ -183,6 +187,9 @@ This package provides man pages for %{name}.
 %endif
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
+%patch7 -p1
+%patch8 -p1
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac

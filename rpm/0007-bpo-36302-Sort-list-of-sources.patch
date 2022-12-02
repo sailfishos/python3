@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "Bernhard M. Wiedemann" <bwiedemann@suse.de>
+Date: Mon, 5 Jun 2017 17:33:33 +0200
+Subject: [PATCH] bpo-36302: Sort list of sources
+
+when building packages (e.g. for openSUSE Linux)
+(random) filesystem order of input files
+influences ordering of functions in the output .so files.
+Thus without the patch, builds (in disposable VMs) would usually differ.
+
+Without this patch, all callers have to be patched individually
+https://github.com/dugsong/libdnet/pull/42
+https://github.com/sass/libsass-python/pull/212
+https://github.com/tahoe-lafs/pycryptopp/pull/41
+https://github.com/yt-project/yt/pull/2206
+https://github.com/pyproj4/pyproj/pull/142
+https://github.com/pytries/datrie/pull/49
+https://github.com/Roche/pyreadstat/pull/37
+but that is an infinite effort.
+
+See https://reproducible-builds.org/ for why this matters.
+---
+ Lib/distutils/command/build_ext.py                             | 3 ++-
+ .../next/Library/2019-03-21-19-23-46.bpo-36302.Yc591g.rst      | 2 ++
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+ create mode 100644 Misc/NEWS.d/next/Library/2019-03-21-19-23-46.bpo-36302.Yc591g.rst
+
+diff --git a/Lib/distutils/command/build_ext.py b/Lib/distutils/command/build_ext.py
+index dbcd9d16f28c599114e479288e2b6e6ffff34a67..1a9bd1200f82358c5a758c69c433bb55621e157e 100644
+--- a/Lib/distutils/command/build_ext.py
++++ b/Lib/distutils/command/build_ext.py
+@@ -490,7 +490,8 @@ class build_ext(Command):
+                   "in 'ext_modules' option (extension '%s'), "
+                   "'sources' must be present and must be "
+                   "a list of source filenames" % ext.name)
+-        sources = list(sources)
++        # sort to make the resulting .so file build reproducible
++        sources = sorted(sources)
+ 
+         ext_path = self.get_ext_fullpath(ext.name)
+         depends = sources + ext.depends
+diff --git a/Misc/NEWS.d/next/Library/2019-03-21-19-23-46.bpo-36302.Yc591g.rst b/Misc/NEWS.d/next/Library/2019-03-21-19-23-46.bpo-36302.Yc591g.rst
+new file mode 100644
+index 0000000000000000000000000000000000000000..fe01b5915d5db75fac95c2a04ccf43e96e8573e4
+--- /dev/null
++++ b/Misc/NEWS.d/next/Library/2019-03-21-19-23-46.bpo-36302.Yc591g.rst
+@@ -0,0 +1,2 @@
++distutils sorts source file lists so that Extension .so files
++build more reproducibly by default
