@@ -25,7 +25,7 @@ BuildRequires:  sqlite-devel
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter extra modules
 License:        Python
-Version:        3.8.11
+Version:        3.11.7
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc
@@ -33,25 +33,21 @@ Source1:        python3-rpmlintrc
 # Disables semaphore test. OBS arm build environment doesn't have
 # /dev/shm mounted, so the test fails, crippling multiprocessing
 # support for real devices.
-Patch0:         0001-Skip-semaphore-test.patch
-# Disable parallel compileall in make install.
-Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
-# Fixup distutils/unixccompiler.py to remove standard library path from rpath:
-Patch2:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
-# Change the various install paths to use /usr/lib64/ instead or /usr/lib
-# Only used when "%%{_lib}" == "lib64"
-Patch3:         0004-00102-Change-the-various-install-paths-to-use-usr-li.patch
+Patch1:         0001-Skip-semaphore-test.patch
 # Ensurepip should honour the value of $(prefix)
-Patch4:         0005-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
+Patch2:         0002-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
 # Restore pyc to TIMESTAMP invalidation mode as default
-Patch5:         0006-pyc-timestamp-invalidation-mode.patch
+Patch3:         0003-00328-Restore-pyc-to-TIMESTAMP-invalidation-mode-as-.patch
+# PATCH-FEATURE-UPSTREAM distutils-reproducible-compile.patch gh#python/cpython#8057 mcepl@suse.com
+# Improve reproduceability
+Patch4:         0004-Improve-reproduceability-patch-from-OpenSUSE.patch
 
 %description
 Additional base modules for Python.
 
-%define         python_version  3.8
-%define         python_version_abitag   38
-%define         python_version_soname   3_8
+%define         python_version  3.11
+%define         python_version_abitag   311
+%define         python_version_soname   3_11
 %define         sitedir         %{_libdir}/python%{python_version}
 
 # Some files are named so that they have this platform triplet
@@ -85,16 +81,7 @@ Summary:        Python3 module for sqlite
 This package contains the sqlite module for Python.
 
 %prep
-%setup -q -n %{name}-%{version}/upstream
-
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%if "%{_lib}" == "lib64"
-%patch3 -p1
-%endif
-%patch4 -p1
-%patch5 -p1
+%autosetup -p1 -n %{name}-%{version}/upstream
 
 %build
 # use rpm_opt_flags
@@ -152,12 +139,15 @@ _statistics
 _struct
 _testbuffer
 _testcapi
+_testclinic
 _testimportmultiple
 _testinternalcapi
 _testmultiphase
+_typing
 _uuid
 _xxsubinterpreters
 _xxtestfuzz
+_zoneinfo
 array
 audioop
 binascii
@@ -167,7 +157,6 @@ grp
 math
 mmap
 ossaudiodev
-parser
 pyexpat
 resource
 select
@@ -176,6 +165,7 @@ syslog
 termios
 unicodedata
 xxlimited
+xxlimited_35
 zlib
 EOF
 

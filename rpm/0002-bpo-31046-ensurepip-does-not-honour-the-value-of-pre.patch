@@ -1,36 +1,35 @@
-From c1b053a19eeed77ebe73166743061189ff96ebfd Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Zackery Spytz <zspytz@gmail.com>
 Date: Mon, 16 Dec 2019 18:24:08 -0700
-Subject: [PATCH 5/5] bpo-31046: ensurepip does not honour the value of
- $(prefix)
+Subject: [PATCH] bpo-31046: ensurepip does not honour the value of $(prefix)
 
 Co-Authored-By: Xavier de Gaye <xdegaye@gmail.com>
 ---
- Doc/library/ensurepip.rst                      |  9 +++++++--
+ Doc/library/ensurepip.rst                      | 10 ++++++++--
  Lib/ensurepip/__init__.py                      | 18 +++++++++++++-----
  Lib/test/test_ensurepip.py                     | 11 +++++++++++
  Makefile.pre.in                                |  4 ++--
  .../2019-12-16-17-50-42.bpo-31046.XA-Qfr.rst   |  1 +
- 5 files changed, 34 insertions(+), 9 deletions(-)
+ 5 files changed, 35 insertions(+), 9 deletions(-)
  create mode 100644 Misc/NEWS.d/next/Build/2019-12-16-17-50-42.bpo-31046.XA-Qfr.rst
 
 diff --git a/Doc/library/ensurepip.rst b/Doc/library/ensurepip.rst
-index a5221250c4..6cedc89c6e 100644
+index de3b93f5e6107301b94a96e61ff338dad96ae314..4ecee90e2aab9fad5ed37bb9c8ccd02e11481708 100644
 --- a/Doc/library/ensurepip.rst
 +++ b/Doc/library/ensurepip.rst
-@@ -56,8 +56,9 @@ is at least as recent as the one bundled with ``ensurepip``, pass the
+@@ -59,7 +59,9 @@ is at least as recent as the one available in ``ensurepip``, pass the
  By default, ``pip`` is installed into the current virtual environment
  (if one is active) or into the system site packages (if there is no
  active virtual environment). The installation location can be controlled
 -through two additional command line options:
 +through some additional command line options:
- 
++
 +* ``--prefix <dir>``: Installs ``pip`` using the given directory prefix.
- * ``--root <dir>``: Installs ``pip`` relative to the given root directory
+ 
+ * :samp:`--root {dir}`: Installs ``pip`` relative to the given root directory
    rather than the root of the currently active virtual environment (if any)
-   or the default root for the current Python installation.
-@@ -89,7 +90,7 @@ Module API
-    Returns a string specifying the bundled version of pip that will be
+@@ -92,7 +94,7 @@ Module API
+    Returns a string specifying the available version of pip that will be
     installed when bootstrapping an environment.
  
 -.. function:: bootstrap(root=None, upgrade=False, user=False, \
@@ -38,16 +37,16 @@ index a5221250c4..6cedc89c6e 100644
                          altinstall=False, default_pip=False, \
                          verbosity=0)
  
-@@ -99,6 +100,8 @@ Module API
+@@ -102,6 +104,8 @@ Module API
     If *root* is ``None``, then installation uses the default install location
     for the current environment.
  
 +   *prefix* specifies the directory prefix to use when installing.
 +
     *upgrade* indicates whether or not to upgrade an existing installation
-    of an earlier version of ``pip`` to the bundled version.
+    of an earlier version of ``pip`` to the available version.
  
-@@ -119,6 +122,8 @@ Module API
+@@ -122,6 +126,8 @@ Module API
     *verbosity* controls the level of output to :data:`sys.stdout` from the
     bootstrapping operation.
  
@@ -57,10 +56,10 @@ index a5221250c4..6cedc89c6e 100644
  
     .. note::
 diff --git a/Lib/ensurepip/__init__.py b/Lib/ensurepip/__init__.py
-index 597a1ef9ee..bfc48913af 100644
+index 81db9fa922d04910cef7247725ca065131256fc4..898e28df05f28ff0271fb4b3c62bf860e72ffe0f 100644
 --- a/Lib/ensurepip/__init__.py
 +++ b/Lib/ensurepip/__init__.py
-@@ -52,27 +52,27 @@ def _disable_pip_configuration_settings():
+@@ -122,27 +122,27 @@ def _disable_pip_configuration_settings():
      os.environ['PIP_CONFIG_FILE'] = os.devnull
  
  
@@ -93,7 +92,7 @@ index 597a1ef9ee..bfc48913af 100644
  
      Note that calling this function will alter both sys.path and os.environ.
      """
-@@ -115,6 +115,8 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
+@@ -192,6 +192,8 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
          args = ["install", "--no-cache-dir", "--no-index", "--find-links", tmpdir]
          if root:
              args += ["--root", root]
@@ -102,7 +101,7 @@ index 597a1ef9ee..bfc48913af 100644
          if upgrade:
              args += ["--upgrade"]
          if user:
-@@ -186,6 +188,11 @@ def _main(argv=None):
+@@ -266,6 +268,11 @@ def _main(argv=None):
          default=None,
          help="Install everything relative to this alternate root directory.",
      )
@@ -114,7 +113,7 @@ index 597a1ef9ee..bfc48913af 100644
      parser.add_argument(
          "--altinstall",
          action="store_true",
-@@ -205,6 +212,7 @@ def _main(argv=None):
+@@ -285,6 +292,7 @@ def _main(argv=None):
  
      return _bootstrap(
          root=args.root,
@@ -123,10 +122,10 @@ index 597a1ef9ee..bfc48913af 100644
          user=args.user,
          verbosity=args.verbosity,
 diff --git a/Lib/test/test_ensurepip.py b/Lib/test/test_ensurepip.py
-index 4786d28f39..8425487d9e 100644
+index bfca0cd7fbe4834cad0a547549428a258cf04cff..1cdf0c7cb21f8d9ac9e41a05e6886a1f359767c6 100644
 --- a/Lib/test/test_ensurepip.py
 +++ b/Lib/test/test_ensurepip.py
-@@ -61,6 +61,17 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
+@@ -112,6 +112,17 @@ def test_bootstrapping_with_root(self):
              unittest.mock.ANY,
          )
  
@@ -134,7 +133,7 @@ index 4786d28f39..8425487d9e 100644
 +        ensurepip.bootstrap(prefix="/foo/bar/")
 +        self.run_pip.assert_called_once_with(
 +            [
-+                "install", "--no-index", "--find-links",
++                "install", "--no-cache-dir", "--no-index", "--find-links",
 +                unittest.mock.ANY, "--prefix", "/foo/bar/",
 +                "setuptools", "pip",
 +            ],
@@ -145,10 +144,10 @@ index 4786d28f39..8425487d9e 100644
          ensurepip.bootstrap(user=True)
  
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index 5d7bc4e13a..51d9ca09f3 100644
+index c61b093fc9399ac7db4db86d3df8b01ebf5deb4b..715bfbdb3726cd94a82e9a8b8bd9df0f0fe15012 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
-@@ -1189,7 +1189,7 @@ install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKI
+@@ -1752,7 +1752,7 @@ install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKI
  			install|*) ensurepip="" ;; \
  		esac; \
  		$(RUNSHARED) $(PYTHON_FOR_BUILD) -m ensurepip \
@@ -157,7 +156,7 @@ index 5d7bc4e13a..51d9ca09f3 100644
  	fi
  
  altinstall: commoninstall
-@@ -1199,7 +1199,7 @@ altinstall: commoninstall
+@@ -1762,7 +1762,7 @@ altinstall: commoninstall
  			install|*) ensurepip="--altinstall" ;; \
  		esac; \
  		$(RUNSHARED) $(PYTHON_FOR_BUILD) -m ensurepip \
@@ -168,11 +167,8 @@ index 5d7bc4e13a..51d9ca09f3 100644
  commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 diff --git a/Misc/NEWS.d/next/Build/2019-12-16-17-50-42.bpo-31046.XA-Qfr.rst b/Misc/NEWS.d/next/Build/2019-12-16-17-50-42.bpo-31046.XA-Qfr.rst
 new file mode 100644
-index 0000000000..07eb89d4d2
+index 0000000000000000000000000000000000000000..07eb89d4d23e507908ea267f87c55a06372b2851
 --- /dev/null
 +++ b/Misc/NEWS.d/next/Build/2019-12-16-17-50-42.bpo-31046.XA-Qfr.rst
 @@ -0,0 +1 @@
 +A directory prefix can now be specified when using :mod:`ensurepip`.
--- 
-2.25.1
-

@@ -44,7 +44,7 @@ BuildRequires:  python3-rpm-generators
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter
 License:        Python
-Version:        3.8.11
+Version:        3.11.7
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc
@@ -52,22 +52,18 @@ Source1:        python3-rpmlintrc
 # Disables semaphore test. OBS arm build environment doesn't have
 # /dev/shm mounted, so the test fails, crippling multiprocessing
 # support for real devices.
-Patch0:         0001-Skip-semaphore-test.patch
-# Disable parallel compileall in make install.
-Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
-# Fixup distutils/unixccompiler.py to remove standard library path from rpath:
-Patch2:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
-# Change the various install paths to use /usr/lib64/ instead or /usr/lib
-# Only used when "%%{_lib}" == "lib64"
-Patch3:         0004-00102-Change-the-various-install-paths-to-use-usr-li.patch
+Patch1:         0001-Skip-semaphore-test.patch
 # Ensurepip should honour the value of $(prefix)
-Patch4:         0005-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
+Patch2:         0002-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
 # Restore pyc to TIMESTAMP invalidation mode as default
-Patch5:         0006-pyc-timestamp-invalidation-mode.patch
+Patch3:         0003-00328-Restore-pyc-to-TIMESTAMP-invalidation-mode-as-.patch
+# PATCH-FEATURE-UPSTREAM distutils-reproducible-compile.patch gh#python/cpython#8057 mcepl@suse.com
+# Improve reproduceability
+Patch4:         0004-Improve-reproduceability-patch-from-OpenSUSE.patch
 
-%define         python_version  3.8
-%define         python_version_abitag   38
-%define         python_version_soname   3_8
+%define         python_version  3.11
+%define         python_version_abitag   311
+%define         python_version_soname   3_11
 %define         sitedir         %{_libdir}/python%{python_version}
 
 # Some files are named so that they have this platform triplet
@@ -173,16 +169,7 @@ This package provides man pages for %{name}.
 
 
 %prep
-%setup -q -n %{name}-%{version}/upstream
-
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%if "%{_lib}" == "lib64"
-%patch3 -p1
-%endif
-%patch4 -p1
-%patch5 -p1
+%autosetup -p1 -n %{name}-%{version}/upstream
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
@@ -213,6 +200,7 @@ _sqlite3
 EOF
 
 ./configure \
+    --with-platlibdir=%{_lib} \
     --prefix=%{_prefix} \
     --libdir=%{_libdir} \
     --mandir=%{_mandir} \
@@ -236,10 +224,11 @@ find . -path "./Parser" -prune \
 # the grep inbetween makes it much faster
 
 # install it
-make \
-    OPT="%{optflags} -fPIC" \
-    DESTDIR=$RPM_BUILD_ROOT \
-    install
+#make \
+#    OPT="%{optflags} -fPIC" \
+#    DESTDIR=$RPM_BUILD_ROOT \
+#    install
+%make_install
 
 # remove .a
 find ${RPM_BUILD_ROOT} -name "*.a" -exec rm {} ";"
@@ -325,6 +314,7 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/*/tests
 %{dynlib _ctypes_test}
 %{dynlib _testcapi}
+%{dynlib _testclinic}
 
 %files
 %defattr(644, root, root, 755)
@@ -359,7 +349,6 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _multibytecodec}
 %{dynlib _multiprocessing}
 %{dynlib ossaudiodev}
-%{dynlib parser}
 %{dynlib _pickle}
 %{dynlib _posixsubprocess}
 %{dynlib _random}
@@ -370,6 +359,7 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _struct}
 %{dynlib syslog}
 %{dynlib termios}
+%{dynlib _typing}
 %{dynlib _testbuffer}
 %{dynlib unicodedata}
 %{dynlib zlib}
@@ -380,6 +370,8 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _queue}
 %{dynlib _testmultiphase}
 %{dynlib _xxtestfuzz}
+%{dynlib xxlimited_35}
+%{dynlib _zoneinfo}
 # hashlib fallback modules
 %{dynlib _md5}
 %{dynlib _sha1}
@@ -423,14 +415,18 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/logging
 %{sitedir}/multiprocessing
 %{sitedir}/pydoc_data
+%{sitedir}/re
+%{sitedir}/tomllib
 %{sitedir}/unittest
 %{sitedir}/urllib
 %{sitedir}/venv
 %{sitedir}/wsgiref
+%{sitedir}/zoneinfo
 %{sitedir}/sqlite3
 %{sitedir}/dbm
 %{sitedir}/curses
 %{sitedir}/site-packages/README.txt
+%{sitedir}/__phello__
 %{sitedir}/__pycache__
 %if "%{_lib}" == "lib64"
 %attr(755, root, root) %dir %{_prefix}/lib/python%{python_version}
@@ -440,7 +436,6 @@ rm -rf $RPM_BUILD_ROOT
 # new in python 3.4
 %{sitedir}/asyncio
 %{sitedir}/site-packages/__pycache__
-%exclude %{sitedir}/site-packages/__pycache__/easy_install*
 # executables
 %attr(755, root, root) %{_bindir}/pydoc%{python_version}
 %attr(755, root, root) %{_bindir}/python%{python_version}

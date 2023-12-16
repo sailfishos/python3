@@ -1,7 +1,7 @@
-From ab52252bf7063f38b6a3f242a3f12a40e893a0a5 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: David Greaves <david@dgreaves.com>
 Date: Fri, 12 Apr 2019 20:28:32 +0100
-Subject: [PATCH 1/5] Skip semaphore test.
+Subject: [PATCH] Skip semaphore test.
 
 OBS's arm build environment doesn't have /dev/shm
 mounted (real devices do) so this fails, crippling
@@ -16,29 +16,26 @@ Signed-off-by: David Greaves <david.greaves@jolla.com>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index e02cc2c656..c70bed9956 100644
+index 52d5c1f7dd3593f3f825fc82af841f76315745ca..aa869152dfec7dfe13060383b225fdeda0d7d07a 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -4540,7 +4540,7 @@ int main(void) {
- }
- ]])],
- [ac_cv_posix_semaphores_enabled=yes],
--[ac_cv_posix_semaphores_enabled=no],
-+[ac_cv_posix_semaphores_enabled=yes],
- [ac_cv_posix_semaphores_enabled=yes])
+@@ -5542,7 +5542,7 @@ AC_CACHE_CHECK([whether POSIX semaphores are enabled], [ac_cv_posix_semaphores_e
+     ])
+   ],
+   [ac_cv_posix_semaphores_enabled=yes],
+-  [ac_cv_posix_semaphores_enabled=no],
++  [ac_cv_posix_semaphores_enabled=yes],
+   [ac_cv_posix_semaphores_enabled=yes])
  )
- AC_MSG_RESULT($ac_cv_posix_semaphores_enabled)
-@@ -4576,8 +4576,8 @@ int main(void){
- }
- ]])],
- [ac_cv_broken_sem_getvalue=no],
--[ac_cv_broken_sem_getvalue=yes],
--[ac_cv_broken_sem_getvalue=yes])
-+[ac_cv_broken_sem_getvalue=no],
-+[ac_cv_broken_sem_getvalue=no])
+ AS_VAR_IF([ac_cv_posix_semaphores_enabled], [no], [
+@@ -5579,8 +5579,8 @@ AC_CACHE_CHECK([for broken sem_getvalue], [ac_cv_broken_sem_getvalue],
+     ])
+   ],
+   [ac_cv_broken_sem_getvalue=no],
+-  [ac_cv_broken_sem_getvalue=yes],
+-  [ac_cv_broken_sem_getvalue=yes])
++  [ac_cv_broken_sem_getvalue=no],
++  [ac_cv_broken_sem_getvalue=no])
  )
- AC_MSG_RESULT($ac_cv_broken_sem_getvalue)
- if test $ac_cv_broken_sem_getvalue = yes
--- 
-2.25.1
-
+ AS_VAR_IF([ac_cv_broken_sem_getvalue], [yes], [
+   AC_DEFINE(
