@@ -1,0 +1,22 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Matti=20Lehtim=C3=A4ki?= <matti.lehtimaki@jolla.com>
+Date: Sat, 16 Dec 2023 16:11:18 +0200
+Subject: [PATCH] Improve reproduceability patch from OpenSUSE.
+
+---
+ Lib/distutils/util.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Lib/distutils/util.py b/Lib/distutils/util.py
+index 2ce5c5b64d62fa0731dfffd0d85c25c0affadd55..241ccc8ee2726900ae731d8462f2a77740ebe2f7 100644
+--- a/Lib/distutils/util.py
++++ b/Lib/distutils/util.py
+@@ -436,7 +436,7 @@ def byte_compile (py_files,
+     else:
+         from py_compile import compile
+ 
+-        for file in py_files:
++        for file in sorted(py_files):
+             if file[-3:] != ".py":
+                 # This lets us be lazy and not filter filenames in
+                 # the "install_lib" command.

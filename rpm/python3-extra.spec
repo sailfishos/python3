@@ -22,10 +22,10 @@ BuildRequires:  automake
 BuildRequires:  readline-devel
 BuildRequires:  python3-devel
 BuildRequires:  sqlite-devel
-Url:            http://www.python.org/
+Url:            https://github.com/sailfishos/python3
 Summary:        Python3 Interpreter extra modules
 License:        Python
-Version:        3.8.18
+Version:        3.11.14
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc
@@ -33,25 +33,25 @@ Source1:        python3-rpmlintrc
 # Disables semaphore test. OBS arm build environment doesn't have
 # /dev/shm mounted, so the test fails, crippling multiprocessing
 # support for real devices.
-Patch0:         0001-Skip-semaphore-test.patch
+Patch1:         0001-Skip-semaphore-test.patch
 # Disable parallel compileall in make install.
-Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
+Patch2:         0002-Disable-parallel-compileall-in-make-install.patch
 # Fixup distutils/unixccompiler.py to remove standard library path from rpath:
-Patch2:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
-# Change the various install paths to use /usr/lib64/ instead or /usr/lib
-# Only used when "%%{_lib}" == "lib64"
-Patch3:         0004-00102-Change-the-various-install-paths-to-use-usr-li.patch
+Patch3:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
 # Ensurepip should honour the value of $(prefix)
-Patch4:         0005-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
+Patch4:         0004-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
 # Restore pyc to TIMESTAMP invalidation mode as default
-Patch5:         0006-pyc-timestamp-invalidation-mode.patch
+Patch5:         0005-00328-Restore-pyc-to-TIMESTAMP-invalidation-mode-as-.patch
+# PATCH-FEATURE-UPSTREAM distutils-reproducible-compile.patch gh#python/cpython#8057 mcepl@suse.com
+# Improve reproduceability
+Patch6:         0006-Improve-reproduceability-patch-from-OpenSUSE.patch
 
 %description
 Additional base modules for Python.
 
-%define         python_version  3.8
-%define         python_version_abitag   38
-%define         python_version_soname   3_8
+%define         python_version  3.11
+%define         python_version_abitag   311
+%define         python_version_soname   3_11
 %define         sitedir         %{_libdir}/python%{python_version}
 
 # Some files are named so that they have this platform triplet
@@ -85,16 +85,7 @@ Summary:        Python3 module for sqlite
 This package contains the sqlite module for Python.
 
 %prep
-%setup -q -n %{name}-%{version}/upstream
-
-%patch -P 0 -p1
-%patch -P 1 -p1
-%patch -P 2 -p1
-%if "%{_lib}" == "lib64"
-%patch -P 3 -p1
-%endif
-%patch -P 4 -p1
-%patch -P 5 -p1
+%autosetup -p1 -n %{name}-%{version}/upstream
 
 %build
 # use rpm_opt_flags
@@ -152,12 +143,15 @@ _statistics
 _struct
 _testbuffer
 _testcapi
+_testclinic
 _testimportmultiple
 _testinternalcapi
 _testmultiphase
+_typing
 _uuid
 _xxsubinterpreters
 _xxtestfuzz
+_zoneinfo
 array
 audioop
 binascii
@@ -167,7 +161,6 @@ grp
 math
 mmap
 ossaudiodev
-parser
 pyexpat
 resource
 select
@@ -176,6 +169,7 @@ syslog
 termios
 unicodedata
 xxlimited
+xxlimited_35
 zlib
 EOF
 
@@ -190,7 +184,7 @@ EOF
     --with-system-ffi=yes
 
 LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH \
-    make %{?_smp_mflags} sharedmods
+    %make_build sharedmods
 
 %install
 make \
@@ -202,13 +196,11 @@ make \
 rm -f $RPM_BUILD_ROOT%{_bindir}/*
 
 %files -n python3-curses
-%defattr(644, root, root, 755)
 %license LICENSE
 %{dynlib _curses}
 %{dynlib _curses_panel}
 %{dynlib readline}
 
 %files -n python3-sqlite
-%defattr(644, root, root, 755)
 %license LICENSE
 %{dynlib _sqlite3}
