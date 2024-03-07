@@ -25,7 +25,7 @@ BuildRequires:  sqlite-devel
 Url:            http://www.python.org/
 Summary:        Python3 Interpreter extra modules
 License:        Python
-Version:        3.8.11
+Version:        3.8.18
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc

@@ -1,8 +1,7 @@
-From c1b053a19eeed77ebe73166743061189ff96ebfd Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Zackery Spytz <zspytz@gmail.com>
 Date: Mon, 16 Dec 2019 18:24:08 -0700
-Subject: [PATCH 5/5] bpo-31046: ensurepip does not honour the value of
- $(prefix)
+Subject: [PATCH] bpo-31046: ensurepip does not honour the value of $(prefix)
 
 Co-Authored-By: Xavier de Gaye <xdegaye@gmail.com>
 ---
@@ -15,7 +14,7 @@ Co-Authored-By: Xavier de Gaye <xdegaye@gmail.com>
  create mode 100644 Misc/NEWS.d/next/Build/2019-12-16-17-50-42.bpo-31046.XA-Qfr.rst
 
 diff --git a/Doc/library/ensurepip.rst b/Doc/library/ensurepip.rst
-index a5221250c4..6cedc89c6e 100644
+index a5221250c40486af667f398d22db9d830452baab..6cedc89c6ef37357a8a01309396434bc1b6c0826 100644
 --- a/Doc/library/ensurepip.rst
 +++ b/Doc/library/ensurepip.rst
 @@ -56,8 +56,9 @@ is at least as recent as the one bundled with ``ensurepip``, pass the
@@ -57,10 +56,10 @@ index a5221250c4..6cedc89c6e 100644
  
     .. note::
 diff --git a/Lib/ensurepip/__init__.py b/Lib/ensurepip/__init__.py
-index 597a1ef9ee..bfc48913af 100644
+index 3dfc2da945cdbca34e60a174e66c252ea0833774..039e01dc75efa56c7fec1140fad36ae5ddafc69b 100644
 --- a/Lib/ensurepip/__init__.py
 +++ b/Lib/ensurepip/__init__.py
-@@ -52,27 +52,27 @@ def _disable_pip_configuration_settings():
+@@ -55,27 +55,27 @@ def _disable_pip_configuration_settings():
      os.environ['PIP_CONFIG_FILE'] = os.devnull
  
  
@@ -93,7 +92,7 @@ index 597a1ef9ee..bfc48913af 100644
  
      Note that calling this function will alter both sys.path and os.environ.
      """
-@@ -115,6 +115,8 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
+@@ -118,6 +118,8 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
          args = ["install", "--no-cache-dir", "--no-index", "--find-links", tmpdir]
          if root:
              args += ["--root", root]
@@ -102,7 +101,7 @@ index 597a1ef9ee..bfc48913af 100644
          if upgrade:
              args += ["--upgrade"]
          if user:
-@@ -186,6 +188,11 @@ def _main(argv=None):
+@@ -189,6 +191,11 @@ def _main(argv=None):
          default=None,
          help="Install everything relative to this alternate root directory.",
      )
@@ -114,7 +113,7 @@ index 597a1ef9ee..bfc48913af 100644
      parser.add_argument(
          "--altinstall",
          action="store_true",
-@@ -205,6 +212,7 @@ def _main(argv=None):
+@@ -208,6 +215,7 @@ def _main(argv=None):
  
      return _bootstrap(
          root=args.root,
@@ -123,7 +122,7 @@ index 597a1ef9ee..bfc48913af 100644
          user=args.user,
          verbosity=args.verbosity,
 diff --git a/Lib/test/test_ensurepip.py b/Lib/test/test_ensurepip.py
-index 4786d28f39..8425487d9e 100644
+index 4786d28f39a3d049cdfed71d7b54bfdbfa6d3a49..8425487d9ed3204f72d4b6dde8fefb2a66941dbf 100644
 --- a/Lib/test/test_ensurepip.py
 +++ b/Lib/test/test_ensurepip.py
 @@ -61,6 +61,17 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
@@ -145,7 +144,7 @@ index 4786d28f39..8425487d9e 100644
          ensurepip.bootstrap(user=True)
  
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index 5d7bc4e13a..51d9ca09f3 100644
+index 5d7bc4e13ad743d9630fa9319533b76dfa967dd6..51d9ca09f3a12157f111d8bd1119f88678e98d6a 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
 @@ -1189,7 +1189,7 @@ install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKI
@@ -168,11 +167,8 @@ index 5d7bc4e13a..51d9ca09f3 100644
  commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 diff --git a/Misc/NEWS.d/next/Build/2019-12-16-17-50-42.bpo-31046.XA-Qfr.rst b/Misc/NEWS.d/next/Build/2019-12-16-17-50-42.bpo-31046.XA-Qfr.rst
 new file mode 100644
-index 0000000000..07eb89d4d2
+index 0000000000000000000000000000000000000000..07eb89d4d23e507908ea267f87c55a06372b2851
 --- /dev/null
 +++ b/Misc/NEWS.d/next/Build/2019-12-16-17-50-42.bpo-31046.XA-Qfr.rst
 @@ -0,0 +1 @@
 +A directory prefix can now be specified when using :mod:`ensurepip`.
--- 
-2.25.1
-

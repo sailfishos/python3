@@ -19,7 +19,7 @@ Ideally, we should talk to upstream and explain why we don't want this
  2 files changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/Lib/py_compile.py b/Lib/py_compile.py
-index a81f493731..bba3642bf2 100644
+index a81f4937310bf81b7e9da68dd7c669dad85b9019..bba3642bf2eebd98711d4e7d33564d4194114ea6 100644
 --- a/Lib/py_compile.py
 +++ b/Lib/py_compile.py
 @@ -70,7 +70,8 @@ class PycInvalidationMode(enum.Enum):
@@ -33,7 +33,7 @@ index a81f493731..bba3642bf2 100644
      else:
          return PycInvalidationMode.TIMESTAMP
 diff --git a/Lib/test/test_py_compile.py b/Lib/test/test_py_compile.py
-index e6791c6916..b2d3dcf7fb 100644
+index e6791c6916ea7fcabaf8873c5ad0620fa9564877..b2d3dcf7fbcccb8071a93fe95d509b4d62e3d13f 100644
 --- a/Lib/test/test_py_compile.py
 +++ b/Lib/test/test_py_compile.py
 @@ -19,6 +19,7 @@ def without_source_date_epoch(fxn):
