@@ -1,8 +1,8 @@
-From 114ee979cb90affcdd799d9bc8f77152e4762a53 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Juho=20H=C3=A4m=C3=A4l=C3=A4inen?=
  <juho.hamalainen@jolla.com>
 Date: Thu, 23 Jan 2020 09:42:29 +0200
-Subject: [PATCH 2/5] Disable parallel compileall in make install.
+Subject: [PATCH] Disable parallel compileall in make install.
 
 Parallel compile breaks with old qemu.
 ---
@@ -10,7 +10,7 @@ Parallel compile breaks with old qemu.
  1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index 7e381283fe..fd2f89ace2 100644
+index 7e381283fee886335462bffb73ac464973ee01fa..fd2f89ace2bf21b9b02eda0385e0770a99754cce 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
 @@ -1479,30 +1479,30 @@ libinstall:	build_all $(srcdir)/Modules/xxmodule.c
@@ -50,6 +50,3 @@ index 7e381283fe..fd2f89ace2 100644
  		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
  	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
  		$(PYTHON_FOR_BUILD) -m lib2to3.pgen2.driver $(DESTDIR)$(LIBDEST)/lib2to3/Grammar.txt
--- 
-2.25.1
-

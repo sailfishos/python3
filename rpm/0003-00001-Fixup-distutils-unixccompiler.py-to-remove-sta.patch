@@ -1,15 +1,15 @@
-From bb2cc033aa83266856a713729190aa95dbb21b3c Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: David Malcolm <dmalcolm@redhat.com>
 Date: Wed, 13 Jan 2010 21:25:18 +0000
-Subject: [PATCH 3/5] 00001: Fixup distutils/unixccompiler.py to remove
- standard library path from rpath Was Patch0 in ivazquez' python3000 specfile
+Subject: [PATCH] 00001: Fixup distutils/unixccompiler.py to remove standard
+ library path from rpath Was Patch0 in ivazquez' python3000 specfile
 
 ---
  Lib/distutils/unixccompiler.py | 9 +++++++++
  1 file changed, 9 insertions(+)
 
 diff --git a/Lib/distutils/unixccompiler.py b/Lib/distutils/unixccompiler.py
-index f0792de74a..4d837936c6 100644
+index f0792de74a1a489a8232d89b6302c77d91a7552e..4d837936c63a7f43bdf907efc5ab7c508c8c039f 100644
 --- a/Lib/distutils/unixccompiler.py
 +++ b/Lib/distutils/unixccompiler.py
 @@ -82,6 +82,15 @@ class UnixCCompiler(CCompiler):
@@ -28,6 +28,3 @@ index f0792de74a..4d837936c6 100644
      def preprocess(self, source, output_file=None, macros=None,
                     include_dirs=None, extra_preargs=None, extra_postargs=None):
          fixed_args = self._fix_compile_args(None, macros, include_dirs)
--- 
-2.25.1
-
