@@ -87,14 +87,14 @@ This package contains the sqlite module for Python.
 %prep
 %setup -q -n %{name}-%{version}/upstream
 
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
+%patch -P 0 -p1
+%patch -P 1 -p1
+%patch -P 2 -p1
 %if "%{_lib}" == "lib64"
-%patch3 -p1
+%patch -P 3 -p1
 %endif
-%patch4 -p1
-%patch5 -p1
+%patch -P 4 -p1
+%patch -P 5 -p1
 
 %build
 # use rpm_opt_flags
