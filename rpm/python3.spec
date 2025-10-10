@@ -175,14 +175,14 @@ This package provides man pages for %{name}.
 %prep
 %setup -q -n %{name}-%{version}/upstream
 
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
+%patch -P 0 -p1
+%patch -P 1 -p1
+%patch -P 2 -p1
 %if "%{_lib}" == "lib64"
-%patch3 -p1
+%patch -P 3 -p1
 %endif
-%patch4 -p1
-%patch5 -p1
+%patch -P 4 -p1
+%patch -P 5 -p1
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac

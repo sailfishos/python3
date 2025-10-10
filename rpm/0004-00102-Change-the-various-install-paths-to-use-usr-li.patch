@@ -9,6 +9,8 @@ Content-Transfer-Encoding: 8bit
 
 Only used when "%{_lib}" == "lib64".
 
+Also sets sys.platlibdir to "lib64" for https://github.com/pypa/distutils/issues/110
+
 Co-authored-by: David Malcolm <dmalcolm@redhat.com>
 Co-authored-by: Thomas Spura <tomspur@fedoraproject.org>
 Co-authored-by: Slavek Kabrda <bkabrda@redhat.com>
@@ -27,13 +29,14 @@ Co-authored-by: Iryna Shcherbina <shcherbina.iryna@gmail.com>
  Lib/test/test_site.py               |  4 ++--
  Makefile.pre.in                     |  2 +-
  Modules/getpath.c                   |  6 +++---
+ Python/sysmodule.c                  |  4 ++++
  configure                           |  4 ++--
  configure.ac                        |  4 ++--
  setup.py                            |  6 +++---
- 11 files changed, 32 insertions(+), 23 deletions(-)
+ 12 files changed, 36 insertions(+), 23 deletions(-)
 
 diff --git a/Lib/distutils/command/install.py b/Lib/distutils/command/install.py
-index c625c95bf7e8cf938b409e218026382a52824491..ae4f915669c302f7ba16857d42d9906c479f3f92 100644
+index c625c95bf7e..ae4f915669c 100644
 --- a/Lib/distutils/command/install.py
 +++ b/Lib/distutils/command/install.py
 @@ -30,14 +30,14 @@ WINDOWS_SCHEME = {
@@ -54,7 +57,7 @@ index c625c95bf7e8cf938b409e218026382a52824491..ae4f915669c302f7ba16857d42d9906c
          'scripts': '$base/bin',
          'data'   : '$base',
 diff --git a/Lib/distutils/sysconfig.py b/Lib/distutils/sysconfig.py
-index b51629eb94f825d8d0f857b8aa5b431814199d72..9a4892a737ee0a56bd01328323933ff8da326cb3 100644
+index b51629eb94f..9a4892a737e 100644
 --- a/Lib/distutils/sysconfig.py
 +++ b/Lib/distutils/sysconfig.py
 @@ -146,8 +146,12 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
@@ -72,7 +75,7 @@ index b51629eb94f825d8d0f857b8aa5b431814199d72..9a4892a737ee0a56bd01328323933ff8
              return libpython
          else:
 diff --git a/Lib/distutils/tests/test_install.py b/Lib/distutils/tests/test_install.py
-index 287ab1989e40836de196d3cfe560afbe6fb79a29..d4c05e0ab1aeff3bf68e9b1502c5e8448d7b56ff 100644
+index 287ab1989e4..d4c05e0ab1a 100644
 --- a/Lib/distutils/tests/test_install.py
 +++ b/Lib/distutils/tests/test_install.py
 @@ -57,8 +57,9 @@ class InstallTestCase(support.TempdirManager,
@@ -87,7 +90,7 @@ index 287ab1989e40836de196d3cfe560afbe6fb79a29..d4c05e0ab1aeff3bf68e9b1502c5e844
          check_path(cmd.install_headers,
                     os.path.join(destination, "include", "python", "foopkg"))
 diff --git a/Lib/site.py b/Lib/site.py
-index 9fa21cca3866747ab3e074777e90e497c35a348d..2e24e86988fcdf6556e8d4dab18bf97e8d9e6a9b 100644
+index 9fa21cca386..2e24e86988f 100644
 --- a/Lib/site.py
 +++ b/Lib/site.py
 @@ -335,11 +335,15 @@ def getsitepackages(prefixes=None):
@@ -107,7 +110,7 @@ index 9fa21cca3866747ab3e074777e90e497c35a348d..2e24e86988fcdf6556e8d4dab18bf97e
      return sitepackages
  
 diff --git a/Lib/sysconfig.py b/Lib/sysconfig.py
-index 3f702d7ea5a86aa9ef922fe91833e8adf3115c5f..df4f7208042eca7ed47de0abdafca8a07e99ebcc 100644
+index 3f702d7ea5a..df4f7208042 100644
 --- a/Lib/sysconfig.py
 +++ b/Lib/sysconfig.py
 @@ -25,10 +25,10 @@ _ALWAYS_STR = {
@@ -139,7 +142,7 @@ index 3f702d7ea5a86aa9ef922fe91833e8adf3115c5f..df4f7208042eca7ed47de0abdafca8a0
          'scripts': '{userbase}/bin',
          'data': '{userbase}',
 diff --git a/Lib/test/test_site.py b/Lib/test/test_site.py
-index 9b2df6bfc39ee80ea6e00a4baf550a687fa5153c..e75ae446375554200eeb2da19eea928eb7246d40 100644
+index 9b2df6bfc39..e75ae446375 100644
 --- a/Lib/test/test_site.py
 +++ b/Lib/test/test_site.py
 @@ -268,8 +268,8 @@ class HelperFunctionsTests(unittest.TestCase):
@@ -154,7 +157,7 @@ index 9b2df6bfc39ee80ea6e00a4baf550a687fa5153c..e75ae446375554200eeb2da19eea928e
                                    'site-packages')
              self.assertEqual(dirs[0], wanted)
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index fd2f89ace2bf21b9b02eda0385e0770a99754cce..5d7bc4e13ad743d9630fa9319533b76dfa967dd6 100644
+index fd2f89ace2b..5d7bc4e13ad 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
 @@ -143,7 +143,7 @@ LIBDIR=		@libdir@
@@ -167,7 +170,7 @@ index fd2f89ace2bf21b9b02eda0385e0770a99754cce..5d7bc4e13ad743d9630fa9319533b76d
  
  # Detailed destination directories
 diff --git a/Modules/getpath.c b/Modules/getpath.c
-index 63815c5fed831b7a1133722da0b6f4cd7cdca30e..ca5f481bc6d79909a0971a99dc26bd8e5438a02e 100644
+index 63815c5fed8..ca5f481bc6d 100644
 --- a/Modules/getpath.c
 +++ b/Modules/getpath.c
 @@ -730,7 +730,7 @@ calculate_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
@@ -197,8 +200,23 @@ index 63815c5fed831b7a1133722da0b6f4cd7cdca30e..ca5f481bc6d79909a0971a99dc26bd8e
      if (!calculate->lib_python) {
          return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
      }
+diff --git a/Python/sysmodule.c b/Python/sysmodule.c
+index a47926727a3..26caa8a835f 100644
+--- a/Python/sysmodule.c
++++ b/Python/sysmodule.c
+@@ -2800,6 +2800,10 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyInterpreterState *interp,
+                         PyUnicode_FromString(ABIFLAGS));
+ #endif
+ 
++    /* platlibdir is used in pypa/distutils */
++    SET_SYS_FROM_STRING("platlibdir",
++                        PyUnicode_FromString("lib64"));
++
+     /* version_info */
+     if (VersionInfoType.tp_name == NULL) {
+         if (PyStructSequence_InitType2(&VersionInfoType,
 diff --git a/configure b/configure
-index c091865aff7502ecb85732a402aad3dee22f08e5..cb75b6373732849270bf84f70d45fa4a46cdca85 100755
+index c091865aff7..cb75b637373 100755
 --- a/configure
 +++ b/configure
 @@ -15264,9 +15264,9 @@ fi
@@ -214,7 +232,7 @@ index c091865aff7502ecb85732a402aad3dee22f08e5..cb75b6373732849270bf84f70d45fa4a
  
  
 diff --git a/configure.ac b/configure.ac
-index 26265b6b1a4a17f214078abe7464ec8af6ef43ef..3e466e8a248be8eed2fce6d7b32705ce971c0351 100644
+index 26265b6b1a4..3e466e8a248 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -4722,9 +4722,9 @@ fi
@@ -230,7 +248,7 @@ index 26265b6b1a4a17f214078abe7464ec8af6ef43ef..3e466e8a248be8eed2fce6d7b32705ce
  AC_SUBST(LIBPL)
  
 diff --git a/setup.py b/setup.py
-index 57be07a7e0f824471451ab9f02a9679c1552397a..0b24dd602e89e1a1e2f646a6d1fbffa31d2d7b2a 100644
+index 57be07a7e0f..0b24dd602e8 100644
 --- a/setup.py
 +++ b/setup.py
 @@ -634,7 +634,7 @@ class PyBuildExt(build_ext):
