@@ -19,16 +19,14 @@
 Name:           python3-base
 BuildRequires:  autoconf-archive
 BuildRequires:  automake
-BuildRequires:  fdupes
-BuildRequires:  pkgconfig
-BuildRequires:  xz
-BuildRequires:  zlib-devel
-BuildRequires:  openssl-devel
 BuildRequires:  bzip2-devel
-BuildRequires:  xz-devel
+BuildRequires:  fdupes
 BuildRequires:  glibc-headers
 BuildRequires:  libffi-devel
-BuildRequires:  pkgconfig(libcrypt)
+BuildRequires:  openssl-devel
+BuildRequires:  pkgconfig
+BuildRequires:  xz-devel
+BuildRequires:  zlib-devel
 # The RPM related dependencies bring nothing when building main python
 # project, that is why we need to explicitly depend rpm generators.
 # When bootstrapping python3, we need to build setuptools.
@@ -41,10 +39,10 @@ BuildRequires:  pkgconfig(libcrypt)
 BuildRequires:  python3-rpm-generators
 %endif
 
-Url:            http://www.python.org/
+Url:            https://github.com/sailfishos/python3
 Summary:        Python3 Interpreter
 License:        Python
-Version:        3.8.18
+Version:        3.11.14
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc
@@ -52,29 +50,29 @@ Source1:        python3-rpmlintrc
 # Disables semaphore test. OBS arm build environment doesn't have
 # /dev/shm mounted, so the test fails, crippling multiprocessing
 # support for real devices.
-Patch0:         0001-Skip-semaphore-test.patch
+Patch1:         0001-Skip-semaphore-test.patch
 # Disable parallel compileall in make install.
-Patch1:         0002-Disable-parallel-compileall-in-make-install.patch
+Patch2:         0002-Disable-parallel-compileall-in-make-install.patch
 # Fixup distutils/unixccompiler.py to remove standard library path from rpath:
-Patch2:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
-# Change the various install paths to use /usr/lib64/ instead or /usr/lib
-# Only used when "%%{_lib}" == "lib64"
-Patch3:         0004-00102-Change-the-various-install-paths-to-use-usr-li.patch
+Patch3:         0003-00001-Fixup-distutils-unixccompiler.py-to-remove-sta.patch
 # Ensurepip should honour the value of $(prefix)
-Patch4:         0005-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
+Patch4:         0004-bpo-31046-ensurepip-does-not-honour-the-value-of-pre.patch
 # Restore pyc to TIMESTAMP invalidation mode as default
-Patch5:         0006-pyc-timestamp-invalidation-mode.patch
+Patch5:         0005-00328-Restore-pyc-to-TIMESTAMP-invalidation-mode-as-.patch
+# PATCH-FEATURE-UPSTREAM distutils-reproducible-compile.patch gh#python/cpython#8057 mcepl@suse.com
+# Improve reproduceability
+Patch6:         0006-Improve-reproduceability-patch-from-OpenSUSE.patch
 
-%define         python_version  3.8
-%define         python_version_abitag   38
-%define         python_version_soname   3_8
+%define         python_version  3.11
+%define         python_version_abitag   311
+%define         python_version_soname   3_11
 %define         sitedir         %{_libdir}/python%{python_version}
 
 # Some files are named so that they have this platform triplet
 %ifarch %{arm}
 %define armsuffix hf
 %endif
-%define		platform_triplet %{_arch}-%{_os}%{?_gnu}%{?armsuffix}
+%define         platform_triplet %{_arch}-%{_os}%{?_gnu}%{?armsuffix}
 
 # soname ABI tag defined in PEP 3149
 %define         so_version %{python_version_soname}1_0
@@ -90,14 +88,6 @@ Requires:       python3-libs = %{version}-%{release}
 %description
 Python is an interpreted, object-oriented programming language, and is
 often compared to Tcl, Perl, Scheme, or Java.
-
-If you want to install third party modules using distutils, you need to
-install python-devel package.
-
-
-Authors:
---------
-    Guido van Rossum <guido@python.org>
 
 
 %package -n python3-devel
@@ -137,9 +127,6 @@ This package contains header files, a static library, and development
 tools for building Python modules, extending the Python interpreter or
 embedding Python in applications.
 
-This also includes the Python distutils, which were in the Python
-package up to version 2.2.2.
-
 
 %package -n python3-testsuite
 Requires:       %{name} = %{version}
@@ -173,16 +160,7 @@ This package provides man pages for %{name}.
 
 
 %prep
-%setup -q -n %{name}-%{version}/upstream
-
-%patch -P 0 -p1
-%patch -P 1 -p1
-%patch -P 2 -p1
-%if "%{_lib}" == "lib64"
-%patch -P 3 -p1
-%endif
-%patch -P 4 -p1
-%patch -P 5 -p1
+%autosetup -p1 -n %{name}-%{version}/upstream
 
 # drop Autoconf version requirement
 sed -i 's/^AC_PREREQ/dnl AC_PREREQ/' configure.ac
@@ -213,6 +191,7 @@ _sqlite3
 EOF
 
 ./configure \
+    --with-platlibdir=%{_lib} \
     --prefix=%{_prefix} \
     --libdir=%{_libdir} \
     --mandir=%{_mandir} \
@@ -224,7 +203,7 @@ EOF
     --with-system-ffi=yes
 
 LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH \
-    make %{?_smp_mflags}
+    %make_build
 
 %install
 # replace rest of /usr/local/bin/python or /usr/bin/python2.5 or /usr/bin/python3m with /usr/bin/python3
@@ -236,10 +215,7 @@ find . -path "./Parser" -prune \
 # the grep inbetween makes it much faster
 
 # install it
-make \
-    OPT="%{optflags} -fPIC" \
-    DESTDIR=$RPM_BUILD_ROOT \
-    install
+%make_install
 
 # remove .a
 find ${RPM_BUILD_ROOT} -name "*.a" -exec rm {} ";"
@@ -288,9 +264,6 @@ install -c -m 644 README.rst                        $PDOCS/
 find $RPM_BUILD_ROOT%{sitedir}/ -type f -name '*.exe' -delete
 
 
-%clean
-rm -rf $RPM_BUILD_ROOT
-
 %files -n python3-doc
 %docdir %{_docdir}/%{name}
 %{_docdir}/%{name}/README.rst
@@ -302,11 +275,9 @@ rm -rf $RPM_BUILD_ROOT
 %postun -n python3-libs -p /sbin/ldconfig
 
 %files -n python3-libs
-%defattr(644, root,root)
 %{_libdir}/libpython%{python_version}.so.*
 
 %files -n python3-devel
-%defattr(644, root, root, 755)
 %{_libdir}/python%{python_version}/config-%{python_version}-%{platform_triplet}
 %{_libdir}/libpython%{python_version}.so
 %{_libdir}/libpython3.so
@@ -319,15 +290,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/2to3-%{python_version}
 
 %files -n python3-testsuite
-%defattr(644, root, root, 755)
 %{sitedir}/test
 %{sitedir}/*/test
 %{sitedir}/*/tests
 %{dynlib _ctypes_test}
 %{dynlib _testcapi}
+%{dynlib _testclinic}
 
 %files
-%defattr(644, root, root, 755)
 %license LICENSE
 # binary parts
 %dir %{sitedir}/lib-dynload
@@ -359,7 +329,6 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _multibytecodec}
 %{dynlib _multiprocessing}
 %{dynlib ossaudiodev}
-%{dynlib parser}
 %{dynlib _pickle}
 %{dynlib _posixsubprocess}
 %{dynlib _random}
@@ -370,6 +339,7 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _struct}
 %{dynlib syslog}
 %{dynlib termios}
+%{dynlib _typing}
 %{dynlib _testbuffer}
 %{dynlib unicodedata}
 %{dynlib zlib}
@@ -380,6 +350,8 @@ rm -rf $RPM_BUILD_ROOT
 %{dynlib _queue}
 %{dynlib _testmultiphase}
 %{dynlib _xxtestfuzz}
+%{dynlib xxlimited_35}
+%{dynlib _zoneinfo}
 # hashlib fallback modules
 %{dynlib _md5}
 %{dynlib _sha1}
@@ -423,14 +395,18 @@ rm -rf $RPM_BUILD_ROOT
 %{sitedir}/logging
 %{sitedir}/multiprocessing
 %{sitedir}/pydoc_data
+%{sitedir}/re
+%{sitedir}/tomllib
 %{sitedir}/unittest
 %{sitedir}/urllib
 %{sitedir}/venv
 %{sitedir}/wsgiref
+%{sitedir}/zoneinfo
 %{sitedir}/sqlite3
 %{sitedir}/dbm
 %{sitedir}/curses
 %{sitedir}/site-packages/README.txt
+%{sitedir}/__phello__
 %{sitedir}/__pycache__
 %if "%{_lib}" == "lib64"
 %attr(755, root, root) %dir %{_prefix}/lib/python%{python_version}
@@ -440,7 +416,6 @@ rm -rf $RPM_BUILD_ROOT
 # new in python 3.4
 %{sitedir}/asyncio
 %{sitedir}/site-packages/__pycache__
-%exclude %{sitedir}/site-packages/__pycache__/easy_install*
 # executables
 %attr(755, root, root) %{_bindir}/pydoc%{python_version}
 %attr(755, root, root) %{_bindir}/python%{python_version}

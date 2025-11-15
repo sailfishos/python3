@@ -16,26 +16,26 @@ Signed-off-by: David Greaves <david.greaves@jolla.com>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index de83332dd3c6e5410a28fff6074c54d7ece630fe..26265b6b1a4a17f214078abe7464ec8af6ef43ef 100644
+index 7b4000fa9c340d949698dcfecb6475eb41fc2027..c394e4b4cbd9a7dbafa856bdd1837f8895cfb07d 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -4542,7 +4542,7 @@ int main(void) {
- }
- ]])],
- [ac_cv_posix_semaphores_enabled=yes],
--[ac_cv_posix_semaphores_enabled=no],
-+[ac_cv_posix_semaphores_enabled=yes],
- [ac_cv_posix_semaphores_enabled=yes])
+@@ -5543,7 +5543,7 @@ AC_CACHE_CHECK([whether POSIX semaphores are enabled], [ac_cv_posix_semaphores_e
+     ])
+   ],
+   [ac_cv_posix_semaphores_enabled=yes],
+-  [ac_cv_posix_semaphores_enabled=no],
++  [ac_cv_posix_semaphores_enabled=yes],
+   [ac_cv_posix_semaphores_enabled=yes])
  )
- AC_MSG_RESULT($ac_cv_posix_semaphores_enabled)
-@@ -4578,8 +4578,8 @@ int main(void){
- }
- ]])],
- [ac_cv_broken_sem_getvalue=no],
--[ac_cv_broken_sem_getvalue=yes],
--[ac_cv_broken_sem_getvalue=yes])
-+[ac_cv_broken_sem_getvalue=no],
-+[ac_cv_broken_sem_getvalue=no])
+ AS_VAR_IF([ac_cv_posix_semaphores_enabled], [no], [
+@@ -5580,8 +5580,8 @@ AC_CACHE_CHECK([for broken sem_getvalue], [ac_cv_broken_sem_getvalue],
+     ])
+   ],
+   [ac_cv_broken_sem_getvalue=no],
+-  [ac_cv_broken_sem_getvalue=yes],
+-  [ac_cv_broken_sem_getvalue=yes])
++  [ac_cv_broken_sem_getvalue=no],
++  [ac_cv_broken_sem_getvalue=no])
  )
- AC_MSG_RESULT($ac_cv_broken_sem_getvalue)
- if test $ac_cv_broken_sem_getvalue = yes
+ AS_VAR_IF([ac_cv_broken_sem_getvalue], [yes], [
+   AC_DEFINE(
