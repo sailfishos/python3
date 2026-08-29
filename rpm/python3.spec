@@ -42,7 +42,7 @@ BuildRequires:  python3-rpm-generators
 Url:            https://github.com/sailfishos/python3
 Summary:        Python3 Interpreter
 License:        Python
-Version:        3.11.15
+Version:        3.11.16
 Release:        0
 Source0:        %{name}-%{version}.tar.gz
 Source1:        python3-rpmlintrc

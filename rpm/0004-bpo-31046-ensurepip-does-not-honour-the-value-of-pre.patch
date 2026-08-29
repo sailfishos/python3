@@ -144,10 +144,10 @@ index bfca0cd7fbe4834cad0a547549428a258cf04cff..1cdf0c7cb21f8d9ac9e41a05e6886a1f
          ensurepip.bootstrap(user=True)
  
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index 534cfe83af278e08494ed4a4cf9e7e571d792389..24332d29c9bf5b3d7a1b468d540550b2a36b249d 100644
+index 081d9bbdad9f585484b87b794e36e1aac469d6f5..067e28d6fa196e88566407e3cbe0e6b7819f5bf1 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
-@@ -1754,7 +1754,7 @@ install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKI
+@@ -1759,7 +1759,7 @@ install: @FRAMEWORKINSTALLFIRST@ commoninstall bininstall maninstall @FRAMEWORKI
  			install|*) ensurepip="" ;; \
  		esac; \
  		$(RUNSHARED) $(PYTHON_FOR_BUILD) -m ensurepip \
@@ -156,7 +156,7 @@ index 534cfe83af278e08494ed4a4cf9e7e571d792389..24332d29c9bf5b3d7a1b468d540550b2
  	fi
  
  altinstall: commoninstall
-@@ -1764,7 +1764,7 @@ altinstall: commoninstall
+@@ -1769,7 +1769,7 @@ altinstall: commoninstall
  			install|*) ensurepip="--altinstall" ;; \
  		esac; \
  		$(RUNSHARED) $(PYTHON_FOR_BUILD) -m ensurepip \
