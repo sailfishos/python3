@@ -16,7 +16,7 @@ Signed-off-by: David Greaves <david.greaves@jolla.com>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 7b4000fa9c340d949698dcfecb6475eb41fc2027..c394e4b4cbd9a7dbafa856bdd1837f8895cfb07d 100644
+index e7b70a83e1082051fa9e4769930940461005b1d2..cad7604e5592bd63024b798a1cbfba3ca9f693dd 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -5543,7 +5543,7 @@ AC_CACHE_CHECK([whether POSIX semaphores are enabled], [ac_cv_posix_semaphores_e
