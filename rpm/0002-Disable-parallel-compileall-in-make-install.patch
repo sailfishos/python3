@@ -10,10 +10,10 @@ Parallel compile breaks with old qemu.
  1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index ad29e1a0ca2869a1ecd9a562be9e088bddf6199a..081d9bbdad9f585484b87b794e36e1aac469d6f5 100644
+index acecc68e7f6e8623b321954fa4d38b3b88fb6275..2df516923e6e8f2e13a3b2850a0bb1ad336a3588 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
-@@ -2151,30 +2151,30 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
+@@ -2152,30 +2152,30 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
  	fi
  	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
  		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
